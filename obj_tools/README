@@ -1,0 +1,19 @@
+* pan_obsd_util_read_obj: reads all components using pan_obsd_util_read
+
+* xor_files, xor_many: used to xor all the object's components together to
+compute the error vector.
+
+* get_obj: is the high level util to get an object's attrs, data, and compute
+and hexdump the error vector.
+
+* obj_data: can read data from the saved components given an offset and
+length (supports raid-5 only)  I usually use it only to translate virtual
+<offset, length> to components <offset, length>  using the -n option (and -x to
+print offsets and lengths in hex)
+
+* grdata: greps hexdump for the given pattern.  I use it to print the same
+offsets from all components.
+
+* scp_obj_tools scp's all the tools above to where you tell it.
+(won't be needed once the tools are installed on blades)
+

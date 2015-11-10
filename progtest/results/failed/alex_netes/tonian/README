@@ -1,0 +1,13 @@
+These file describes the solution to the test questions.
+
+1. <snippet_1.c> Ccontains implementation of the asked functions.
+   <snippet_1_test.c> contains a simple test flow.
+	It initiates 3 buffers with different sizes, maps them to
+	scatter-gather lists and than perform several copy tests.
+
+2. <snippet_2.c> contains comments with the pointed errors.
+   <snippet_2_test.c> contains fixed code with basic test flow.
+
+3. The function indeed deletes the last element from the list, however it
+	overwrites the pointer to the global pending_list
+   <snippet_3_test.c> contains basic flow that demonstrates the problem.

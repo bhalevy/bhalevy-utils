@@ -1,0 +1,6 @@
+
+snippet_3.c mistakes
+=====================
+
+1. After the for loop, there's an extra "(*i) = (*i)->next" that will delete the element *after* the one we need to delete (or fail if we're trying to delete the last element).
+2. "packetfree(p)" should be "packetfree(*i)". That's the whole idea of traversing the linked list until we get to element to be deleted. (the check for (!NULL) should be changed, too).

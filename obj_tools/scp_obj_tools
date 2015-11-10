@@ -1,0 +1,3 @@
+#!/bin/bash
+
+scp xor_files xor_many get_obj get_obj_bladeset pan_obsd_util_read_obj obj_data grdata $*

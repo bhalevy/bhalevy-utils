@@ -1,0 +1,179 @@
+#include <stdlib.h>
+#include <string.h>
+
+#define PAGE_SIZE 32
+
+typedef unsigned long physaddr_t;
+
+typedef struct sg_entry_s sg_entry_t;
+struct sg_entry_s {
+	physaddr_t paddr;
+	int count;
+	struct sg_entry_s *next;
+	struct sg_entry_s *prev;
+};
+
+/*
+
+assumptions:
+1. ptr_to_phys and phys_to_ptr functions are given.
+
+things that werent clear to me:
+1. what is the purpose of the count field? if it is a reference count
+   then when a physical page is being mapped that has been previously 
+   been mapped the reference will be incremented. but for this to be 
+   effective a sg_unmap function should be implemented. if such a 
+   function is implemented then the list should be doubly linked or
+   unmapping a block will be very inefficient.
+2. when mapping a region to a list there is no list argument which
+   implies that the list head is globally defined. but the destroy
+   function does get such an argument implying that the data type
+   supports more than one list. I implemented a globally defined list
+   (the tail and head variables). if its necessary to support multiple
+   lists a struct type should be defined with the tail and head vars 
+   and passed to the sg_destroy, sg_map and sg_unmap functions.
+3. is the offset in the sg_copy function for the src, the dest or both.
+   I assumed both.
+
+*/
+
+
+sg_entry_t *tail = NULL;
+sg_entry_t *head = NULL;
+
+/*
+ * find entry with the physical address specified or return NULL if it doesnt
+ */
+sg_entry_t* sg_find(physaddr_t paddr)
+{
+	sg_entry_t *curr = head;
+	for (; curr; curr = curr->next) {
+		if (curr->paddr == paddr) {
+			return curr;
+		}
+	}
+	return NULL;
+}
+
+/*
+ * we map full pages so we need to find the page boundary before
+ * the address given.
+ */
+sg_entry_t *sg_map(void *buf, int length)
+{
+	// first page in the buffer might not start on a page boundary.
+	// we map from the previous page boundary
+	int page_boundary_offset = (unsigned long)buf % PAGE_SIZE;
+	void *curr = buf - page_boundary_offset;
+	void *end = buf + length; 
+
+	for (; curr < end; curr += PAGE_SIZE) {
+		physaddr_t paddr = ptr_to_phys(curr);
+		
+		// check if the entry has already been mapped
+		sg_entry_t* entry = sg_find(paddr);
+		if (entry) {
+			entry->count++;
+			continue;
+		}
+
+		entry = malloc(sizeof(sg_entry_t));
+		if (!entry)
+			return NULL;
+
+		entry->paddr = paddr;
+		entry->count = 1;
+		entry->next = NULL;
+		entry->prev = tail;
+
+		if (tail) {
+			tail->next = entry;
+			tail = entry;
+		} else {
+			tail = entry;
+			head = entry;
+		}
+	}
+}
+
+/*
+ * unmap an entry. decrement the ref count and if it reaches zero
+ * remove the netry from the list
+ */
+int sg_unmap(sg_entry_t* entry)
+{
+	if (--entry->count == 0) {
+		if (entry->prev)
+			entry->prev->next = entry->next;
+		else
+			head = entry->next;
+
+		if (entry->next)
+			entry->next->prev = entry->prev;	
+		else
+			tail = entry->prev;
+
+		free(entry);
+	}
+}
+
+/*
+ * destroy an sg_list. free all the lists entries.
+ * there is no check of the reference count. to free the
+ * list taking the count into account should be done by
+ * calling sg_unmap
+ */
+void sg_destroy(void)
+{
+	sg_entry_t* curr = head;
+
+	while (curr) {
+		sg_entry_t* del_entry = curr;
+		curr = curr->next;
+		free(del_entry);
+	}
+	tail = head = NULL;
+}
+
+#define MIN(a,b) ((a < b) ? a : b) 
+
+/*
+ * copy count bytes from from offset in the src sg list to the dest sg 
+ * list (at the same offset).
+ */
+int sg_copy(sg_entry_t *src, sg_entry_t *dest, int offset, int count)
+{
+	int curr_offset = offset;
+	int total_copied = 0;
+	sg_entry_t *curr_src = src;
+	sg_entry_t *curr_dest = dest;	
+
+	// find the entry to start copying from
+	for (; curr_src && curr_offset >= PAGE_SIZE; 
+	     curr_src = curr_src->next, curr_offset -= PAGE_SIZE);
+
+	if (!curr_src)
+		return 0; // offset is larger than the src buffer
+	
+	while (count && curr_src && curr_dest) {
+		int copy_size = MIN(PAGE_SIZE - curr_offset, count);
+		
+		// phys_copy is a function to copy data between physical pages
+		// which is assumed to be implemented.
+//		phys_copy(curr_src->paddr + curr_offset, 
+//			  curr_dest->paddr + curr_offset, 
+//			  copy_size);
+		memcpy((char *)phys_to_ptr(curr_src->paddr) + curr_offset,
+			  (char *)phys_to_ptr(curr_dest->paddr) + curr_offset,
+			  copy_size);
+		
+		total_copied += copy_size;
+		count -= copy_size;
+		curr_src = curr_src->next;
+		curr_dest = curr_dest->next;
+	}
+	return total_copied;
+}
+
+
+

@@ -1,0 +1,28 @@
+From 0ed61abb1d0cbac06d67900d11f5fa1857bc342c Mon Sep 17 00:00:00 2001
+From: gilad <gilad@gilad>
+Date: Mon, 31 Oct 2011 19:44:48 +0200
+Subject: [PATCH 3/3] RTP: avoid free'ing the newely allocated packet
+
+We allocated the new packet to be used by the caller. We don't
+need to free it.
+
+Signed-off-by: gilad <gilad@gilad>
+---
+ snippet_2.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/snippet_2.c b/snippet_2.c
+index 6162ae2..25aa901 100644
+--- a/snippet_2.c
++++ b/snippet_2.c
+@@ -29,7 +29,6 @@ void *create_packet(void *p)
+ 
+ 	free(ptr);
+ 	ptr = dummy;
+-	free(dummy);
+ 
+ 	ptr->sequence ++;
+ 	ptr->timestamp += 160;
+-- 
+1.7.4.1
+

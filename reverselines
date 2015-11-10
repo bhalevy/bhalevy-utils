@@ -1,0 +1,9 @@
+#!/bin/awk -f
+{
+	lines[++count] = $0;
+}
+
+END {
+	while (count > 0)
+		print lines[count--];
+}

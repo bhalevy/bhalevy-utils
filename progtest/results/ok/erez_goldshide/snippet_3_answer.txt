@@ -1,0 +1,14 @@
+The function in snippet_3.c will not work.
+
+1. In line 7, we get a pointer to the head of the list (which is
+a pointer to packet). When we do "*i = ((*i)->next)" in line 9, we actually
+change the head of the global list. This is probably not what we intended to do!
+We need to hold an iterator which is packet* and not packet**.
+
+2. We need to keep a pointer to the element before the one we want to delete.
+We need to set its next pointer to be the one after the element we intend to
+remove.
+
+3. We must take special care in case the element we want to delete is the head
+of the list. In that case, the head of the global list must be changed as well
+(since the list has a new head now)

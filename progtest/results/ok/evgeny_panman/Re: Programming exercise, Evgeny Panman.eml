@@ -1,0 +1,473 @@
+Delivered-To: bhalevy@tonian.com
+Received: by 10.182.85.4 with SMTP id d4cs11567obz;
+        Thu, 17 Nov 2011 03:56:20 -0800 (PST)
+Received: by 10.180.107.97 with SMTP id hb1mr41404353wib.18.1321530978969;
+        Thu, 17 Nov 2011 03:56:18 -0800 (PST)
+Return-Path: <evgeny.panman@gmail.com>
+Received: from mail-ey0-f174.google.com (mail-ey0-f174.google.com [209.85.215.174])
+        by mx.google.com with ESMTPS id s7si12210189wiw.68.2011.11.17.03.56.18
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Thu, 17 Nov 2011 03:56:18 -0800 (PST)
+Received-SPF: pass (google.com: domain of evgeny.panman@gmail.com designates 209.85.215.174 as permitted sender) client-ip=209.85.215.174;
+Authentication-Results: mx.google.com; spf=pass (google.com: domain of evgeny.panman@gmail.com designates 209.85.215.174 as permitted sender) smtp.mail=evgeny.panman@gmail.com; dkim=pass (test mode) header.i=@gmail.com
+Received: by eye27 with SMTP id 27so2505950eye.33
+        for <multiple recipients>; Thu, 17 Nov 2011 03:56:18 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=gamma;
+        h=mime-version:in-reply-to:references:date:message-id:subject:from:to
+         :cc:content-type;
+        bh=D65HM+IPFM4U8FakZra6yf6EuoOznvnldqoLxyYH2XI=;
+        b=WTU9IMg/5XKO7iSJe1Pbl3SMV9v3m32s2Neb7/ONk2y9srLTLUh/V8MFe8uenwyfah
+         zkC2WK2F9me86zWAR30Cm5R9bPNeWeUdJg08k/x1m3XYXDSzcNEmhM2IFqVTPenMCQY3
+         sWDEYdR7oY89kCNV5ysyXewfsGLBelwW0TSmg=
+MIME-Version: 1.0
+Received: by 10.213.35.141 with SMTP id p13mr53913ebd.67.1321530977695; Thu,
+ 17 Nov 2011 03:56:17 -0800 (PST)
+Received: by 10.213.15.129 with HTTP; Thu, 17 Nov 2011 03:56:17 -0800 (PST)
+In-Reply-To: <CAEMWVhu6mtvbJwePjaK4w5TK283_Jfxaxw4vaKgCOvcmUPcd+w@mail.gmail.com>
+References: <CAEMWVhu6mtvbJwePjaK4w5TK283_Jfxaxw4vaKgCOvcmUPcd+w@mail.gmail.com>
+Date: Thu, 17 Nov 2011 13:56:17 +0200
+Message-ID: <CAGcm7nXAhANzf4mizbt+0tE2_y8qc8+juo261gOSvvF2vEVmfQ@mail.gmail.com>
+Subject: Re: Programming exercise, Evgeny Panman
+From: Evgeny Panman <evgeny.panman@gmail.com>
+To: Benny Halevy <bhalevy@tonian.com>
+Cc: Danit Segev <danit@tonian.com>
+Content-Type: multipart/mixed; boundary=0015174c1c187c369604b1ece810
+
+--0015174c1c187c369604b1ece810
+Content-Type: multipart/alternative; boundary=0015174c1c187c368f04b1ece80e
+
+--0015174c1c187c368f04b1ece80e
+Content-Type: text/plain; charset=windows-1252
+Content-Transfer-Encoding: quoted-printable
+
+Hi Benny,
+
+The answers are:
+
+Question 1: see attached file.
+
+Question 2; create_packet
+
+/* It is not an error, but since the function copy rtp_packet it is better
+to define the function like struct rtp_packet* create_packet(struct
+rtp_packet *p) */
+
+void *create_packet(void *p)
+
+{
+
+/* rtp_packet should be used with word struct. Otherwise it causes
+compilation error in the following 3 lines. The same error in the line with
+malloc. */
+
+rtp_packet *ptr; // correct struct rtp_packet *ptr;
+
+rtp_packet *dummy; // correct struct rtp_packet *dummy;
+
+
+ ptr =3D (rtp_packet *) p; // correct ptr =3D (struct rtp_packet *) p;
+
+/*
+
+1.malloc allocates memory for pointer on struct instead of the struct.
+Also, packet contains pointer to payload. The function should allocate
+space for it.
+
+2. malloc receives 1 argument. So, it should be called malloc(1 * sizeof(
+struct rtp_packet ));
+
+*/
+
+dummy =3D (rtp_packet *)malloc(1, sizeof(rtp_packet *));
+
+
+ if (dummy =3D=3D NULL) {
+
+return NULL;
+
+}
+
+/* Although the following line copies fields of the struct rtp_packet, it
+does not copy payload. We need =93deep copy=94 here. */
+
+*dummy =3D *ptr;
+
+
+ /* According to the function definition, it should not release original
+packet. If it does, it should also clean memory used by payload. */
+
+free(ptr);
+
+ptr =3D dummy;
+
+/* The following line releases memory allocated for new packet (assuming we
+fix previous errors). So, the function will return pointer to unallocated
+memory.*/
+
+free(dummy);
+
+/* The following 2 lines works on unallocated memory. */
+
+ptr->sequence ++;
+
+ptr->timestamp +=3D 160;
+
+
+ return ptr;
+
+}
+
+
+ Question 3:remove_from_pending_list
+
+
+ There is a bug in the update condition of the loop:
+
+
+ for (;(*i) !=3D NULL && ((*i) !=3D p); *i =3D ((*i)->next)) {
+
+}
+
+From the beginning of the program, i points to pending_list. Code *i =3D
+((*i)->next) actually puts pointer to the next element in the list inside
+pending_list.
+
+As a result, after removing last element in the list, pending_list points
+to NULL and the list remains empty.
+
+The correct implementation should be:
+
+void remove_from_pending_list_correct(packet *p)
+
+{
+
+packet **i =3D &pending_list;
+
+ for (;(*i) !=3D NULL && ((*i) !=3D p); i =3D &((*i)->next)) {
+
+}
+
+ if (*i !=3D NULL) {
+
+(*i) =3D (*i)->next;
+
+}
+
+ if (p !=3D NULL) {
+
+packetfree(p);
+
+}
+
+}
+
+Looking forward to hearing from you,
+
+  Evgeny
+
+On Mon, Nov 14, 2011 at 6:46 PM, Benny Halevy <bhalevy@tonian.com> wrote:
+
+> Hi Evgeny,
+>
+> Following up on our meeting earlier today,
+> Please find the programming exercise below.
+> Let us know if you have any questions.
+>
+> Looking forward to hearing from you,
+>
+> Benny
+>
+> ---
+> 1. Please find attached a header file containing definitions
+> for a scatter-gather data type and a list of functions to implement:
+>
+> * sg_map maps a memory region into a scatter gather list
+> * sg_destroy destroys a scatter gather list
+> * sg_copy copies 'count' bytes from src to dest starting at 'offset'
+>
+> * ptr_to_phys and phys_to_ptr map a pointer to a physical address and
+> vice-verse
+>   and are implemented as inline functions.  Please use those to convert
+> virtual
+>   memory addresses into physical addresses and vice verse.
+>
+> 2. Find all possible mistakes (there might be none) in the following
+> piece of code. The function apparently takes an RTP packet, and
+> creates a new RTP packet with all the fields same as the previous RTP
+> packet except that the sequence number and timestamp are changed.
+>
+> <see attached snippet_2.c>
+>
+> 3. Pointer manipulation: The following function is suppose to delete
+> an element from a singly linked list. Will it work? If yes, show the
+> steps when the linked list has initially 4 elements and the last
+> element is supposed to be deleted. If not, point out a mistake.
+>
+> <see attached snippet_3.c>
+>
+>
+>
+
+--0015174c1c187c368f04b1ece80e
+Content-Type: text/html; charset=windows-1252
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr">Hi Benny,<br><br>The answers are:<br><br>Question 1: see a=
+ttached file.<br>
+
+
+=09
+=09
+=09
+	<style type=3D"text/css">p { margin-bottom: 0.08in; }</style>
+
+<p style=3D"margin-bottom: 0in;">Question 2; create_packet</p>
+
+
+
+<p style=3D"margin-bottom: 0in;">/* It is not an error, but since the
+function copy rtp_packet it is better to define the function like
+struct rtp_packet* create_packet(struct rtp_packet *p) */</p>
+<p style=3D"margin-bottom: 0in;">void *create_packet(void *p)</p>
+<p style=3D"margin-bottom: 0in;">{</p>
+
+<p style=3D"margin-bottom: 0in;">/* rtp_packet should be used with word
+struct. Otherwise it causes compilation error in the following 3
+lines. The same error in the line with malloc. */</p>
+<p style=3D"margin-bottom: 0in;">	rtp_packet *ptr; // correct struct
+rtp_packet *ptr;</p>
+<p style=3D"margin-bottom: 0in;">	rtp_packet *dummy; // correct struct
+rtp_packet *dummy;</p>
+<p style=3D"margin-bottom: 0in;"><br>
+</p>
+<p style=3D"margin-bottom: 0in;">	ptr =3D (rtp_packet *) p; // correct ptr
+=3D (struct  rtp_packet *) p;</p>
+<p style=3D"margin-bottom: 0in;">/*</p>
+<p style=3D"margin-bottom: 0in;">1.malloc allocates memory for pointer
+on struct instead of the struct. Also, packet contains pointer to
+payload. The function should allocate space for it.</p>
+<p style=3D"margin-bottom: 0in;">2. malloc receives 1 argument. So, it
+should be called malloc(1 * sizeof( struct rtp_packet ));</p>
+
+<p style=3D"margin-bottom: 0in;">*/</p>
+<p style=3D"margin-bottom: 0in;">	dummy =3D (rtp_packet *)malloc(1,
+sizeof(rtp_packet *));</p>
+<p style=3D"margin-bottom: 0in;"><br>
+</p>
+<p style=3D"margin-bottom: 0in;">	if (dummy =3D=3D NULL) {</p>
+<p style=3D"margin-bottom: 0in;">		return NULL;</p>
+<p style=3D"margin-bottom: 0in;">	}</p>
+
+
+<p style=3D"margin-bottom: 0in;">/* Although the following line copies
+fields of the struct rtp_packet, it does not copy payload. We need
+=93deep copy=94 here. */</p>
+<p style=3D"margin-bottom: 0in;">	*dummy =3D *ptr;</p>
+<p style=3D"margin-bottom: 0in;"><br>
+</p>
+
+<p style=3D"margin-bottom: 0in;">/* According to the function definition,
+it should not release original packet. If it does, it should also
+clean memory used by payload. */</p>
+<p style=3D"margin-bottom: 0in;">	free(ptr);</p>
+<p style=3D"margin-bottom: 0in;">	ptr =3D dummy;</p>
+
+<p style=3D"margin-bottom: 0in;">/* The following line releases memory
+allocated for new packet (assuming we fix previous errors). So, the
+function will return pointer to unallocated memory.*/</p>
+<p style=3D"margin-bottom: 0in;">	free(dummy);</p>
+
+<p style=3D"margin-bottom: 0in;">/* The following 2 lines works on
+unallocated memory. */</p>
+<p style=3D"margin-bottom: 0in;">	ptr-&gt;sequence ++;</p>
+<p style=3D"margin-bottom: 0in;">	ptr-&gt;timestamp +=3D 160;</p>
+<p style=3D"margin-bottom: 0in;"><br>
+</p>
+<p style=3D"margin-bottom: 0in;">	return ptr;</p>
+<p style=3D"margin-bottom: 0in;">}</p>
+<p style=3D"margin-bottom: 0in;"><br>
+</p>
+<p style=3D"margin-bottom: 0in;">Question 3:remove_from_pending_list</p>
+<p style=3D"margin-bottom: 0in;"><br>
+</p>
+<p style=3D"margin-bottom: 0in;">There is a bug in the update condition
+of the loop:</p>
+<p style=3D"margin-bottom: 0in;"><br>
+</p>
+<p style=3D"margin-bottom: 0in;">    for (;(*i) !=3D NULL &amp;&amp; ((*i)
+!=3D p); *i =3D ((*i)-&gt;next)) {
+</p>
+<p style=3D"margin-bottom: 0in;">    }=20
+</p>
+<p style=3D"margin-bottom: 0in;">From the beginning of the program, i
+points to pending_list. Code *i =3D ((*i)-&gt;next) actually puts
+pointer to the next element in the list inside  pending_list.</p>
+<p style=3D"margin-bottom: 0in;">As a result, after removing last
+element in the list, pending_list points to NULL and the list remains
+empty.</p>
+<p style=3D"margin-bottom: 0in;">The correct implementation should be:</p>
+<p style=3D"margin-bottom: 0in;">void
+remove_from_pending_list_correct(packet *p)=20
+</p>
+<p style=3D"margin-bottom: 0in;">{
+</p>
+<p style=3D"margin-bottom: 0in;">    packet **i =3D &amp;pending_list;
+</p>
+<p style=3D"margin-bottom: 0in;">
+</p>
+<p style=3D"margin-bottom: 0in;">    for (;(*i) !=3D NULL &amp;&amp; ((*i)
+!=3D p); i =3D &amp;((*i)-&gt;next)) {
+</p>
+<p style=3D"margin-bottom: 0in;">    }  =20
+</p>
+<p style=3D"margin-bottom: 0in;">
+</p>
+<p style=3D"margin-bottom: 0in;">    if (*i !=3D NULL) {
+</p>
+<p style=3D"margin-bottom: 0in;">        (*i) =3D (*i)-&gt;next;
+</p>
+<p style=3D"margin-bottom: 0in;">    }
+</p>
+<p style=3D"margin-bottom: 0in;">
+</p>
+<p style=3D"margin-bottom: 0in;">    if (p !=3D NULL) {
+</p>
+<p style=3D"margin-bottom: 0in;">      packetfree(p);
+</p>
+<p style=3D"margin-bottom: 0in;">    }
+</p>
+<p style=3D"margin-bottom: 0in;">}
+</p>
+<br>Looking forward to hearing from you,<br><br>=A0 Evgeny<br><br><div clas=
+s=3D"gmail_quote">On Mon, Nov 14, 2011 at 6:46 PM, Benny Halevy <span dir=
+=3D"ltr">&lt;<a href=3D"mailto:bhalevy@tonian.com">bhalevy@tonian.com</a>&g=
+t;</span> wrote:<br>
+<blockquote class=3D"gmail_quote" style=3D"margin: 0pt 0pt 0pt 0.8ex; borde=
+r-left: 1px solid rgb(204, 204, 204); padding-left: 1ex;"><div dir=3D"ltr">=
+<div class=3D"gmail_quote"><div dir=3D"ltr"><div class=3D"gmail_quote"><div=
+ dir=3D"ltr">
+<div class=3D"gmail_quote"><div dir=3D"ltr"><div class=3D"gmail_quote"><div=
+ dir=3D"ltr"><div class=3D"gmail_quote"><div dir=3D"ltr">Hi Evgeny,<br>
+
+<div class=3D"gmail_quote">
+<br>Following up on our meeting earlier today,<br>
+Please find the programming exercise below.<br>Let us know if you have any =
+questions.<br><br>Looking forward to hearing from you,<br>
+<br>Benny<br>
+<br>
+---<br>
+1. Please find attached a header file containing definitions<br>
+for a scatter-gather data type and a list of functions to implement:<br>
+<br>
+* sg_map maps a memory region into a scatter gather list<br>
+* sg_destroy destroys a scatter gather list<br>
+* sg_copy copies &#39;count&#39; bytes from src to dest starting at &#39;of=
+fset&#39;<br>
+<br>
+* ptr_to_phys and phys_to_ptr map a pointer to a physical address and vice-=
+verse<br>
+=A0 and are implemented as inline functions.=A0 Please use those to convert=
+ virtual<br>
+=A0 memory addresses into physical addresses and vice verse.<br>
+<br>
+2. Find all possible mistakes (there might be none) in the following<br>
+piece of code. The function apparently takes an RTP packet, and<br>
+creates a new RTP packet with all the fields same as the previous RTP<br>
+packet except that the sequence number and timestamp are changed.<br>
+<br>
+&lt;see attached snippet_2.c&gt;<br>
+<br>
+3. Pointer manipulation: The following function is suppose to delete<br>
+an element from a singly linked list. Will it work? If yes, show the<br>
+steps when the linked list has initially 4 elements and the last<br>
+element is supposed to be deleted. If not, point out a mistake.<br>
+<br>
+&lt;see attached snippet_3.c&gt;<br>
+</div><br></div>
+</div></div></div></div></div></div></div></div>
+</div><br></div>
+</blockquote></div><br></div>
+
+--0015174c1c187c368f04b1ece80e--
+--0015174c1c187c369604b1ece810
+Content-Type: text/x-csrc; charset=US-ASCII; name="sg_copy.c"
+Content-Disposition: attachment; filename="sg_copy.c"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_gv3pcird3
+
+LyoKICogc2dfbWFwICAgICAgICBNYXAgYSBtZW1vcnkgYnVmZmVyIHVzaW5nIGEgc2NhdHRlci1n
+YXRoZXIgbGlzdAogKgogKiBAaW4gYnVmICAgICAgIFBvaW50ZXIgdG8gYnVmZmVyCiAqIEBpbiBs
+ZW5ndGggICAgQnVmZmVyIGxlbmd0aCBpbiBieXRlcwogKgogKiBAcmV0ICAgICAgICAgIEEgbGlz
+dCBvZiBzZ19lbnRyeSBlbGVtZW50cyBtYXBwaW5nIHRoZSBpbnB1dCBidWZmZXIKICoKICogQG5v
+dGUgICAgICAgICBNYWtlIGEgc2NhdHRlci1nYXRoZXIgbGlzdCBtYXBwaW5nIGEgYnVmZmVyIGlu
+dG8KICogICAgICAgICAgICAgICBhIGxpc3Qgb2YgY2h1bmtzIG1hcHBpbmcgdXAgdG8gUEFHRV9T
+SVpFIGJ5dGVzIGVhY2guCiAqICAgICAgICAgICAgICAgQWxsIGVudHJpZXMgZXhjZXB0IHRoZSBm
+aXJzdCBvbmUgbXVzdCBiZSBhbGlnbmVkIG9uIGEKICogICAgICAgICAgICAgICBQQUdFX1NJWkUg
+YWRkcmVzczsKICovCnNnX2VudHJ5X3QgKnNnX21hcCh2b2lkICpidWYsIGludCBsZW5ndGgpCnsK
+CWlmKGxlbmd0aCA8PSAwKSB7CgkJcmV0dXJuIE5VTEw7Cgl9Cgl1bnNpZ25lZCBsb25nIGN1cnJl
+bnRfb2Zmc2V0ID0gKHVuc2lnbmVkIGxvbmcpYnVmOwoJdW5zaWduZWQgbG9uZyBtYXhfb2Zmc2V0
+ID0gY3VycmVudF9vZmZzZXQgKyBsZW5ndGg7Cgl1bnNpZ25lZCBsb25nIG5leHRfYWxpZ25lZF9v
+ZmZzZXQgPSAoY3VycmVudF9vZmZzZXQgJiB+KFBBR0VfU0laRSAtIDEpKSArIFBBR0VfU0laRTsK
+CglzZ19lbnRyeV90ICpoZWFkID0gTlVMTDsKCXNnX2VudHJ5X3QgKipjdXJyZW50X3AgPSAmaGVh
+ZDsKCgl3aGlsZShjdXJyZW50X29mZnNldCA8IG1heF9vZmZzZXQpIHsKCQkqY3VycmVudF9wPSAo
+c2dfZW50cnlfdCAqKW1hbGxvYyhzaXplb2Yoc2dfZW50cnlfdCkpOwoJCWlmKCpjdXJyZW50X3Ag
+PT0gTlVMTCkgewoJCQkvLyBkbyBzb21ldGhpbmcgd2l0aCBlcnJvcgoJCQlyZXR1cm4gTlVMTDsK
+CQl9CgkJKCpjdXJyZW50X3ApLT5wYWRkciA9IHB0cl90b19waHlzKCh2b2lkKiljdXJyZW50X29m
+ZnNldCk7CgkJaWYobWF4X29mZnNldCA8PSBuZXh0X2FsaWduZWRfb2Zmc2V0KSB7CgkJCS8qIHRo
+aXMgaXMgbGFzdCBlbGVtZW50IGluIHRoZSBsaXN0Ki8KCQkJKCpjdXJyZW50X3ApLT5uZXh0ID0g
+TlVMTDsKCQkJKCpjdXJyZW50X3ApLT5jb3VudCA9IG1heF9vZmZzZXQgLSBjdXJyZW50X29mZnNl
+dDsKCQkJYnJlYWs7CgkJfQoKCQkoKmN1cnJlbnRfcCktPmNvdW50ID0gbmV4dF9hbGlnbmVkX29m
+ZnNldCAtIGN1cnJlbnRfb2Zmc2V0OwoJCWN1cnJlbnRfb2Zmc2V0ID0gbmV4dF9hbGlnbmVkX29m
+ZnNldDsKCQluZXh0X2FsaWduZWRfb2Zmc2V0ICs9IFBBR0VfU0laRTsKCQljdXJyZW50X3AgPSAm
+KCgqY3VycmVudF9wKS0+bmV4dCk7Cgl9CgoJcmV0dXJuIGhlYWQ7Cn0KCi8qCiAqIHNnX2Rlc3Ry
+b3kgICAgRGVzdHJveSBhIHNjYXR0ZXItZ2F0aGVyIGxpc3QKICoKICogQGluIHNnX2xpc3QgICBB
+IHNjYXR0ZXItZ2F0aGVyIGxpc3QKICovCnZvaWQgc2dfZGVzdHJveShzZ19lbnRyeV90ICpzZ19s
+aXN0KQp7Cgl3aGlsZShzZ19saXN0ICE9IE5VTEwpIHsKCQlzZ19lbnRyeV90ICpuZXh0ID0gc2df
+bGlzdC0+bmV4dDsKCQlmcmVlKHNnX2xpc3QpOwoJCXNnX2xpc3QgPSBuZXh0OwoJfQp9CgpzdGF0
+aWMgaW5saW5lIHZvaWQgY29weV9zaW5nbGVfY2h1bmsocGh5c2FkZHJfdCBkZXN0LCBpbnQgZGVz
+dF9vZmZzZXQsIHBoeXNhZGRyX3Qgc3JjLCBpbnQgc3JjX29mZnNldCwgaW50IGNvdW50KQp7Cgl2
+b2lkICpkYWRkciA9IHBoeXNfdG9fcHRyKGRlc3QgKyBkZXN0X29mZnNldCk7Cgl2b2lkICpzYWRk
+ciA9IHBoeXNfdG9fcHRyKHNyYyArIHNyY19vZmZzZXQpOwoKCW1lbWNweShkYWRkciwgc2FkZHIs
+IGNvdW50KTsKfQoKLyoKICogc2dfY29weSAgICAgICBDb3B5IGJ5dGVzIHVzaW5nIHNjYXR0ZXIt
+Z2F0aGVyIGxpc3RzCiAqCiAqIEBpbiBzcmMgICAgICAgU291cmNlIHNnIGxpc3QKICogQGluIGRl
+c3QgICAgICBEZXN0aW5hdGlvbiBzZyBsaXN0CiAqIEBpbiBzcmNfb2Zmc2V0IE9mZnNldCBpbnRv
+IHNvdXJjZQogKiBAaW4gY291bnQgICAgIE51bWJlciBvZiBieXRlcyB0byBjb3B5CiAqCiAqIEBy
+ZXQgICAgICAgICAgQWN0dWFsIG51bWJlciBvZiBieXRlcyBjb3BpZWQKICoKICogQG5vdGUgICAg
+ICAgICBUaGUgZnVuY3Rpb24gY29waWVzICJjb3VudCIgYnl0ZXMgZnJvbSAic3JjIiwKICogICAg
+ICAgICAgICAgICBzdGFydGluZyBmcm9tICJzcmNfb2Zmc2V0IiBpbnRvIHRoZSBiZWdpbm5pbmcg
+b2YgImRlc3QiLgogKiAgICAgICAgICAgICAgIFRoZSBzY2F0dGVyIGdhdGhlciBsaXN0IGNhbiBi
+ZSBvZiBhcmJpdHJhcnkgbGVuZ3RoIHNvIGl0IGlzCiAqICAgICAgICAgICAgICAgcG9zc2libGUg
+dGhhdCBmZXdlciBieXRlcyBjYW4gYmUgY29waWVkLgogKiAgICAgICAgICAgICAgIFRoZSBmdW5j
+dGlvbiByZXR1cm5zIHRoZSBhY3R1YWwgbnVtYmVyIG9mIGJ5dGVzIGNvcGllZAogKi8KaW50IHNn
+X2NvcHkoc2dfZW50cnlfdCAqc3JjLCBzZ19lbnRyeV90ICpkZXN0LCBpbnQgc3JjX29mZnNldCwg
+aW50IGNvdW50KQp7CglpZigoc3JjID09IE5VTEwpIHx8IChkZXN0ID09IE5VTEwpIHx8IChzcmNf
+b2Zmc2V0IDwgMCkgfHwgKGNvdW50IDw9IDApKQoJewoJCS8qIG5vdGhpbmcgdG8gZG8gKi8KCQly
+ZXR1cm4gMDsKCX0KCgkvKiBmaW5kIHBsYWNlIGluIHNyYyBwb2ludGVkIGJ5IHNyY19vZmZzZXQg
+Ki8KCXdoaWxlKHNyYy0+Y291bnQgPD0gc3JjX29mZnNldCkKCXsKCQlzcmNfb2Zmc2V0IC09IHNy
+Yy0+Y291bnQ7CgkJc3JjID0gc3JjLT5uZXh0OwoJCWlmKHNyYyA9PSBOVUxMKQoJCXsKCQkJLyog
+b2Zmc2V0IG91dHNpZGUgb2YgdGhlIGxpc3QqLwoJCQlyZXR1cm4gMDsKCQl9Cgl9CgoJaW50IHRv
+dGFsID0gMDsKCWludCBzcmNfY291bnQ7CglpbnQgZGVzdF9jb3VudDsKCWludCBkZXN0X29mZnNl
+dCA9IDA7CglpbnQgY29weV9jb3VudDsKCgl3aGlsZShjb3VudCkKCXsKCQlzcmNfY291bnQgPSBz
+cmMtPmNvdW50IC0gc3JjX29mZnNldDsKCQlkZXN0X2NvdW50ID0gZGVzdC0+Y291bnQgLSBkZXN0
+X29mZnNldDsKCQkKCQljb3B5X2NvdW50ID0gKHNyY19jb3VudCA8IGRlc3RfY291bnQpID8gc3Jj
+X2NvdW50IDogZGVzdF9jb3VudDsKCQlpZihjb3B5X2NvdW50ID49IGNvdW50KQoJCXsKCQkJLyog
+Ym90aCBjaHVuayBjb25hdGlucyBlbm91dGggZGF0YSB0byBhY2NvbXBsaXNoIGNvcHkgb2YgbGFz
+dCBjb3VudCBieXRlcwoJCQkJdGhpcyBpcyB0aGUgbGFzdCBjb3B5IGluIHRoZSBmdW5jdGlvbiov
+CgkJCWNvcHlfc2luZ2xlX2NodW5rKGRlc3QtPnBhZGRyLCBkZXN0X29mZnNldCwgc3JjLT5wYWRk
+ciwgc3JjX29mZnNldCwgY291bnQpOwoJCQl0b3RhbCArPSBjb3VudDsKCQkJYnJlYWs7CgkJfQoK
+CQljb3B5X3NpbmdsZV9jaHVuayhkZXN0LT5wYWRkciwgZGVzdF9vZmZzZXQsIHNyYy0+cGFkZHIs
+IHNyY19vZmZzZXQsIGNvcHlfY291bnQpOwoJCWNvdW50IC09IGNvcHlfY291bnQ7CgkJdG90YWwg
+Kz0gY29weV9jb3VudDsKCQlpZihzcmNfY291bnQgPT0gZGVzdF9jb3VudCkKCQl7CgkJCS8qIG5l
+ZWQgdG8gbW92ZSBib3RoIHNyYyBhbmQgZGVzdCB0byBuZXh0IGNodW5rKi8KCQkJc3JjID0gc3Jj
+LT5uZXh0OwoJCQlkZXN0ID0gZGVzdC0+bmV4dDsKCQkJaWYoKHNyYyA9PSBOVUxMKSB8fCAoZGVz
+dCA9PSBOVUxMKSkKCQkJewoJCQkJLyogbm8gbW9yZSBkYXRhIGluIG9uZSBvZiB0aGUgbGlzdHMq
+LwoJCQkJYnJlYWs7CgkJCX0KCQkJc3JjX29mZnNldCA9IDA7CgkJCWRlc3Rfb2Zmc2V0ID0gMDsK
+CQl9CgkJZWxzZSBpZihzcmNfY291bnQgPiBkZXN0X2NvdW50KQoJCXsKCQkJLyogbW92ZSBkZXN0
+IHRvIG5leHQgY2h1bmsqLwoJCQlkZXN0ID0gZGVzdC0+bmV4dDsKCQkJaWYoZGVzdCA9PSBOVUxM
+KQoJCQl7CgkJCQlicmVhazsKCQkJfQoJCQlkZXN0X29mZnNldCA9IDA7CgkJCXNyY19vZmZzZXQg
+Kz0gIGNvcHlfY291bnQ7CgkJfQoJCWVsc2UKCQl7CgkJCS8qIG1vdmUgc3JjIHRvIG5leHQgY2h1
+bmsgKi8KCQkJc3JjID0gc3JjLT5uZXh0OwoJCQlpZihzcmMgPT0gTlVMTCkKCQkJewoJCQkJYnJl
+YWs7CgkJCX0KCQkJc3JjX29mZnNldCA9IDA7CgkJCWRlc3Rfb2Zmc2V0ICs9IGNvcHlfY291bnQ7
+CgkJfQoKCX0KCglyZXR1cm4gdG90YWw7Cn0KCg==
+--0015174c1c187c369604b1ece810--

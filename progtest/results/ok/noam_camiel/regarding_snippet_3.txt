@@ -1,0 +1,7 @@
+Pointer manipulation: The function remove_from_pending_list() is supposed to delete an element from a singly linked list.
+
+The code won't work because the packet p is not actually taken out of the pending_list.  
+All that takes place is that the packet pointer (*i), when it points to element p, that packet pointer is advanced to the next element, not making any actual change to the list. 
+
+generally, in order to take an element p out of a singly linked list, the item before p needs to be located, and that element's next pointer should be set to point to p->next.
+

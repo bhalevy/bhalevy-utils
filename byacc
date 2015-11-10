@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# backward compat script fro gentoo byacc
+
+yacc_cmd="$0.orig"
+
+# parse the -o option if present
+args=""
+out_file=""
+while [ "$1" != "" ]; do
+	if [ "$1" = "-o" ]; then
+		out_file="$2"
+		shift
+	else
+		args="$args $1"
+	fi
+	shift
+done
+
+{
+	$yacc_cmd $args && \
+	mv y.tab.c $out_file && \
+	mv y.tab.h `echo $out_file | sed 's/\.c$/.h/'`
+} || exit $?

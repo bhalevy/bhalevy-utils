@@ -1,0 +1,41 @@
+#!/bin/sh
+
+progname=`basename $0`
+
+usage ( ) {
+	echo "Usage: $progname [-s bladeset] objid" 2>&1
+	exit 1
+}
+
+objid=""
+bladeset=1
+for i; do
+    case "$i" in
+    -s)
+	bladeset=$2;
+	shift 2;;
+    -*)
+	usage;;
+    *)
+        objid=$1
+	if ! echo $objid | egrep -q 'I-xD[0-9a-fA-F]+-xG[0-9a-fA-F]+-xU[0-9a-fA-F]+'; then
+	    usage;
+	fi
+	;;
+    esac
+done
+
+go=`echo $objid | sed 's/I-xD[^-]*-//'`
+devs=`pan_obsd_util_getattr -A -s $bladeset $objid | grep MAP_V1 | sort -u | awk '
+    {
+	d=$4;
+	sub(/^\"0x/, "", d);
+	sub(/\(OBSD\).*$/, "", d);
+	print d;
+    }'`
+
+i=0;
+for d in $devs; do
+	pan_obsd_util_read I-xD$d-$go && mv outfile $objid.$i
+	i=$(($i+1))
+done

@@ -1,0 +1,55 @@
+#!/bin/sh
+
+progname=`basename $0`
+
+usage ( ) {
+    {
+        echo "Usage: $progname [options] objid" 
+        echo "   or  $progname [options] file"
+        echo
+        echo "Options:"
+        echo "   -s bladeset  overide automatic bladeset detection"
+    } 1>&2
+        exit 1
+}
+
+bladeset=""
+for i; do
+    case "$i" in
+    -s)
+        bladeset=$2
+        shift 2;;
+    -*)
+        usage;;
+    *)
+        o=$1
+        if echo $o | egrep -q '^/'; then
+            if ! echo $o | egrep -q '^/panfs/'; then
+                o=`pan_fm_obj_util -I $o 2>/dev/null | head -1`
+            fi
+        fi
+        ;;
+    esac
+done
+
+objid_pat='I-xD[0-9a-fA-F]+-xG[0-9a-fA-F]+-xU[0-9a-fA-F]+$'
+if ! echo $o | egrep -q "$objid_pat"; then
+    o=`panfs_getattr -I $o 2>/dev/null | head -1`
+fi
+if ! echo $o | egrep -q "$objid_pat"; then
+    usage;
+fi
+
+if [ "$bladeset" = "" ]; then
+    bladeset=`./get_obj_bladeset $o`
+fi
+if [ "$bladeset" = "" ]; then
+    bladeset=1
+fi
+
+echo $progname: collecting data for $o on bladeset $bladeset
+pan_sm_print_obj $o > $o.attrs
+pan_fm_obj_util --paths $o > $o.paths
+./pan_obsd_util_read_obj -s $bladeset $o > /dev/null
+./xor_many $o.[0-9a-f] && mv xor.out $o.x
+#hexdump $o.x

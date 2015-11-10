@@ -1,0 +1,66 @@
+#!/bin/sh
+
+progname=`basename $0`
+
+if [ $(id -u) != 0 ]; then
+	echo "$progname must be run as root" 1>&2
+	exit 1
+fi
+
+usage ()
+{
+	echo "Usage: $progname server" 1>&2
+	exit 2
+}
+
+if [ $# != 1 ]; then
+	usage
+fi
+
+s="$1"
+
+cd /etc
+
+if [ ! -d .git ]; then
+	echo Initializing git tree in /etc
+	git init || exit 1
+else
+	git status | egrep -s '^#[[:space:]]+modified:' && {
+		echo /etc has uncommitted changes 1>&2
+		exit 1
+	}
+fi
+
+tmpdir=/tmp/$progname.$$
+mkdir $tmpdir || exit 1
+
+files="passwd shadow"
+
+for i in $files; do
+	cp $i $tmpdir/l$i || exit 1
+	scp "$s":/etc/$i $tmpdir/r$i || exit 1
+done
+
+mergepasswd $tmpdir/{l,r,m}{passwd,shadow} || {
+	echo $progname: mergepasswd failed 1>&2
+	exit 1
+}
+
+same=1
+for i in $files; do
+	cmp -s $tmpdir/m$i $i || same=0
+done
+
+if [ $same == 1 ]; then
+	echo $progname: no update required 1>&2
+	exit 0
+fi
+
+for i in $files; do
+	cp $tmpdir/m$i $i || exit 1
+done
+
+git add $files
+git commit -m "$progname: updated $files"
+
+rm -rf $tmpdir

@@ -1,0 +1,13 @@
+#!/bin/awk -f
+
+$9 == "iops" {
+	n++;
+	tot_iops += $10;
+	tot_lat += 1000 / $10;
+	print;
+}
+
+END {
+	printf("threads %d tot_iops %d avg_iops %d avg_lat %.3f\n",
+		n, tot_iops, tot_iops / n + 0.5, tot_lat / n);
+}

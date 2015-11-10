@@ -1,0 +1,10 @@
+#!/bin/sh
+
+if [ -z "$1" ]; then
+	echo Usage: $0 dir 1>&2
+	exit 1
+fi
+
+d="$1"
+mkdir -p "$d"
+exec cp Makefile sg_copymain.c sg_copy.h "$d"

@@ -1,0 +1,23 @@
+The function create_packet() apparently takes an RTP packet, and creates a new RTP packet
+The problems with the code:
+
+  1. Packet p is not checked if it is NULL or not
+
+  2. rtp_packet is a struct and should be declared as a struct rtp_packet (this is relevant to all places where rtp_packet appears)
+
+  3. Allocation for the dummy variable is of the size of the pointer to the rtp_packet rather than to the entire packet size (apart from malloc syntax error)
+
+therefore in the line:
+*dummy = *ptr
+the values of the data exceeding the size of a pointer would overwrite unallocated data with unpredictable results
+
+  4. The payload contents is not copied but rather the pointer to the payload is copied. So they point to the same one.
+
+  5. free(ptr):  freeing ptr means freeing the packet sent into the function, p. This can be problematic for the following reasons:
+  a. the packet may not have been dynamically alocated
+  b. the caller to the function may not be aware of the fact the parameter p has been freed and may use it
+
+  6. free(dummy): variable dummy is freed so altering values in dummy (pointed to by ptr) is unpredictable.  returning dummy (through returning ptr) is returning a pointer to unalocated memory and the usage of it is unpredictable.
+
+  7. As for the bitfield structure definition, the bits should be separated from the other fields
+

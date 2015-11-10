@@ -1,0 +1,29 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+PAGE_SIZE	sg_copy.h	2;"	d
+ccount	snippet_2.c	/^	int ccount:4;$/;"	m	struct:rtp_packet	file:
+count	sg_copy.h	/^	int count;                      \/* numer of bytes: *\/$/;"	m	struct:sg_entry_s
+create_packet	snippet_2.c	/^void *create_packet(void *p)$/;"	f
+extension	snippet_2.c	/^	int extension:1;$/;"	m	struct:rtp_packet	file:
+marker	snippet_2.c	/^	int marker:1;$/;"	m	struct:rtp_packet	file:
+next	sg_copy.h	/^	struct sg_entry_s *next;$/;"	m	struct:sg_entry_s	typeref:struct:sg_entry_s::sg_entry_s
+padding	snippet_2.c	/^	int padding:1;$/;"	m	struct:rtp_packet	file:
+paddr	sg_copy.h	/^	physaddr_t paddr;               \/* physical address *\/$/;"	m	struct:sg_entry_s
+payload	snippet_2.c	/^	char *payload;$/;"	m	struct:rtp_packet	file:
+payload_length	snippet_2.c	/^	int payload_length;$/;"	m	struct:rtp_packet	file:
+payloadtype	snippet_2.c	/^	int payloadtype:7;$/;"	m	struct:rtp_packet	file:
+phys_to_ptr	sg_copy.h	/^phys_to_ptr(physaddr_t paddr)$/;"	f
+physaddr_t	sg_copy.h	/^typedef unsigned long physaddr_t;	\/* physical address type *\/$/;"	t
+ptr_to_phys	sg_copy.h	/^ptr_to_phys(void *p)$/;"	f
+remove_from_pending_list	snippet_3.c	/^void remove_from_pending_list(packet *p)$/;"	f
+rtp_packet	snippet_2.c	/^struct rtp_packet {$/;"	s	file:
+sequence	snippet_2.c	/^	int sequence:16;$/;"	m	struct:rtp_packet	file:
+sg_entry_s	sg_copy.h	/^struct sg_entry_s {$/;"	s
+sg_entry_t	sg_copy.h	/^typedef struct sg_entry_s sg_entry_t;$/;"	t	typeref:struct:sg_entry_s
+ssrc	snippet_2.c	/^	int ssrc;$/;"	m	struct:rtp_packet	file:
+timestamp	snippet_2.c	/^	int timestamp;$/;"	m	struct:rtp_packet	file:
+version	snippet_2.c	/^	int version:2;$/;"	m	struct:rtp_packet	file:

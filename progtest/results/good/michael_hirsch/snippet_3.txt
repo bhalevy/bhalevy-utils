@@ -1,0 +1,7 @@
+3.  Pointer manipulation: the loop increment statement is wrong since *i is a synonym for pending_list.  This means that every time the loop executes, an element is lost from the head of the  pending_list.
+
+packet **i = &pending_list;
+
+for (;(*i) != NULL && ((*i) != p); *i = ((*i)->next)) {
+/* do nothing */;
+}

@@ -1,0 +1,110 @@
+#!/bin/sh
+
+export argv0=$(basename $0)
+
+if [ $# != 6 ]; then
+	echo Usage: $argv0 local_passwd local_shadow remote_passwd remote_shadow merged_passwd merged_shadow 1>&2
+	exit 1
+fi
+
+export lpasswd="$1"
+export lshadow="$2"
+export rpasswd="$3"
+export rshadow="$4"
+export mpasswd="$5"
+export mshadow="$6"
+export tpasswd="/tmp/$progname-passwd.$$"
+export tshadow="/tmp/$progname-shadow.$$"
+
+for i in "$lpasswd" "$lshadow" "$rpasswd" "$rshadow"; do
+	if [ ! -r "$i" ]; then
+		echo $argv0: cannot read $i 1>&2
+		exit 1
+	fi
+done
+
+for i in "$mpasswd" "$mshadow" "$tpasswd" "$tshadow"; do
+	echo -n > "$i" || {
+		echo $argv0: cannot write $i 1>&2
+		exit 1
+	}
+done
+
+awk '
+function parseline (l, file, line, accounts, passwds, uids_by_name, uids_by_id) {
+	count = split(l, a, /:/);
+	if (count < 7) {
+		printf("%s: %s:%d: \"%s\": invalid format\n",
+			ENVIRON["argv0"], file, line, l) > "/dev/stderr";
+		exit(1);
+	}
+	n = a[1];
+	if (accounts[n]) {
+		printf("%s: %s:%d: name %s: already exists\n",
+			ENVIRON["argv0"], file, line, n) > "/dev/stderr";
+		exit(1);
+	}
+	accounts[n] = l;
+	# count == 7: passwd
+	# count == 9: shadow
+	if (count == 7) {
+		passwds[n] = a[2];
+		id = a[3];
+		uids_by_name[n] = id;
+		uids_by_id[id] = n;
+	}
+}
+
+BEGIN {
+	lpasswd = ENVIRON["lpasswd"];
+	lshadow = ENVIRON["lshadow"];
+	rpasswd = ENVIRON["rpasswd"];
+	rshadow = ENVIRON["rshadow"];
+	mpasswd = ENVIRON["tpasswd"];	# write into temp file
+	mshadow = ENVIRON["tshadow"];	# write into temp file
+	errors = 0;
+
+	# pass 0: parse local and remote files
+	for (ln = 1; (getline l < lpasswd) > 0; ln++)
+		parseline(l, lpasswd, ln, laccounts, lpasswds, luids_by_name, luids_by_id);
+	for (ln = 1; (getline l < rpasswd) > 0; ln++)
+		parseline(l, rpasswd, ln, raccounts, rpasswds, ruids_by_name, ruids_by_id);
+	for (ln = 1; (getline l < lshadow) > 0; ln++)
+		parseline(l, lshadow, ln, lshadows);
+	for (ln = 1; (getline l < rshadow) > 0; ln++)
+		parseline(l, rshadow, ln, rshadows);
+
+	# pass 1: look for inconsistencies
+	for (n in laccounts) {
+		uid = luids_by_name[n];
+		if (uid >= 500 && uid < 10000 &&
+		    raccounts[n] && laccounts[n] != raccounts[n]) {
+			printf("-%s\n", laccounts[n]) > "/dev/stderr";
+			printf("+%s\n", raccounts[n]) > "/dev/stderr";
+			errors++
+		}
+	}
+
+	if (errors)
+		exit(1);
+
+	# pass 2: print local accounts
+	for (n in laccounts) {
+		print laccounts[n] > mpasswd;
+		if (lshadows[n])
+			print lshadows[n] > mshadow;
+	}
+
+	# pass 3: print unique remote accounts
+	for (n in raccounts) {
+		uid = ruids_by_name[n];
+		if (uid < 500 || uid >= 10000 || laccounts[n])
+			continue;
+		print raccounts[n] > mpasswd;
+		if (rshadows[n])
+			print rshadows[n] > mshadow;
+	}
+}
+' && \
+sort $tpasswd > $mpasswd && \
+sort $tshadow > $mshadow

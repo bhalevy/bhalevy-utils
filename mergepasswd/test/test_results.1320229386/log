@@ -1,0 +1,24 @@
+1320229386 test_all.001: ./test_ok ../mergepasswd data/ok: EXPECT SUCCESS
+1320229386 test_ok.002: TEST BEGIN
+1320229386 test_ok.002: mkdir -p ./test_results.1320229386/test_ok.002/test_ok/pass1 ./test_results.1320229386/test_ok.002/test_ok/pass2: EXPECT SUCCESS
+1320229386 test_ok.002: mkdir -p ./test_results.1320229386/test_ok.002/test_ok/pass1 ./test_results.1320229386/test_ok.002/test_ok/pass2: PASSED
+1320229386 test_ok.002: ../mergepasswd data/ok/lpasswd data/ok/lshadow data/ok/rpasswd data/ok/rshadow ./test_results.1320229386/test_ok.002/test_ok/pass1/mpasswd ./test_results.1320229386/test_ok.002/test_ok/pass1/mshadow: EXPECT SUCCESS
+1320229386 test_ok.002: ../mergepasswd data/ok/lpasswd data/ok/lshadow data/ok/rpasswd data/ok/rshadow ./test_results.1320229386/test_ok.002/test_ok/pass1/mpasswd ./test_results.1320229386/test_ok.002/test_ok/pass1/mshadow: PASSED
+1320229386 test_ok.002: ../mergepasswd ./test_results.1320229386/test_ok.002/test_ok/pass1/mpasswd ./test_results.1320229386/test_ok.002/test_ok/pass1/mshadow data/ok/rpasswd data/ok/rshadow ./test_results.1320229386/test_ok.002/test_ok/pass2/mpasswd ./test_results.1320229386/test_ok.002/test_ok/pass2/mshadow: EXPECT SUCCESS
+1320229386 test_ok.002: ../mergepasswd ./test_results.1320229386/test_ok.002/test_ok/pass1/mpasswd ./test_results.1320229386/test_ok.002/test_ok/pass1/mshadow data/ok/rpasswd data/ok/rshadow ./test_results.1320229386/test_ok.002/test_ok/pass2/mpasswd ./test_results.1320229386/test_ok.002/test_ok/pass2/mshadow: PASSED
+1320229386 test_ok.002: diff -u ./test_results.1320229386/test_ok.002/test_ok/pass1/mpasswd ./test_results.1320229386/test_ok.002/test_ok/pass2/mpasswd: EXPECT SUCCESS
+1320229386 test_ok.002: diff -u ./test_results.1320229386/test_ok.002/test_ok/pass1/mpasswd ./test_results.1320229386/test_ok.002/test_ok/pass2/mpasswd: PASSED
+1320229386 test_ok.002: diff -u ./test_results.1320229386/test_ok.002/test_ok/pass1/mshadow ./test_results.1320229386/test_ok.002/test_ok/pass2/mshadow: EXPECT SUCCESS
+1320229386 test_ok.002: diff -u ./test_results.1320229386/test_ok.002/test_ok/pass1/mshadow ./test_results.1320229386/test_ok.002/test_ok/pass2/mshadow: PASSED
+1320229386 test_ok.002: TEST PASSED
+1320229386 test_all.001: ./test_ok ../mergepasswd data/ok: PASSED
+1320229386 test_all.001: ./test_fail ../mergepasswd data/fail: EXPECT SUCCESS
+1320229386 test_fail.002: TEST BEGIN
+1320229386 test_fail.002: mkdir -p ./test_results.1320229386/test_fail.002/test_fail: EXPECT SUCCESS
+1320229386 test_fail.002: mkdir -p ./test_results.1320229386/test_fail.002/test_fail: PASSED
+1320229386 test_fail.002: ../mergepasswd data/fail/lpasswd data/fail/lshadow data/fail/rpasswd data/fail/rshadow ./test_results.1320229386/test_fail.002/test_fail/mpasswd ./test_results.1320229386/test_fail.002/test_fail/mshadow: EXPECT FAILURE
+-bhalevy:x:711:711::/home/bhalevy:/bin/bash
++bhalevy:x:711:100::/home/bhalevy:/bin/bash
+1320229386 test_fail.002: ../mergepasswd data/fail/lpasswd data/fail/lshadow data/fail/rpasswd data/fail/rshadow ./test_results.1320229386/test_fail.002/test_fail/mpasswd ./test_results.1320229386/test_fail.002/test_fail/mshadow: PASSED
+1320229386 test_fail.002: TEST PASSED
+1320229386 test_all.001: ./test_fail ../mergepasswd data/fail: PASSED

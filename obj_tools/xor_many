@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ $# = 0 ]; then
+	echo Usage: `basename $0`": file ..." 2>&1
+	exit 1
+fi
+
+xf=`echo $0 | sed s/many/files/`
+cp $1 xor.out
+shift
+for i; do
+	$xf $i xor.out > xor.tmp && mv xor.tmp xor.out
+done

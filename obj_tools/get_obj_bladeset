@@ -1,0 +1,32 @@
+#!/usr/bin/perl
+#
+# Usage: get_obj_bladeset obj_id
+#
+# @author cahuja
+# @author bhalevy
+#
+# @PANASAS_COPYRIGHT@
+#
+use strict;
+
+my ($progname, $obj_id, $group_id, $i, $ALL, $set_id, @lines);
+
+($progname = `basename $0`) =~ s/\n//;
+$obj_id = @ARGV[0];
+
+die "Usage: $progname obj_id\n" if $obj_id !~ /^I-xD([0-9a-fA-F]+)-xG([0-9a-fA-F]+)-xU([0-9a-fA-F]+)$/;
+
+$group_id = $2;
+
+$ALL = `pan_rm_volume_list`;
+@lines = split("\n", $ALL);
+for ($i=0; $i<@lines; $i++) {
+  if ( $lines[$i] =~ /\s*(\d+)\s+(\S+)\s+(\S+)\s.*-xG$group_id-xU/ ) {
+    $set_id = $3;
+    last;
+  }
+}
+
+die "$obj_id: bladeset not found\n" if $set_id == "";
+
+print "$set_id\n";

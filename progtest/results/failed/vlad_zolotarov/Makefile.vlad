@@ -1,0 +1,12 @@
+SOURCES = sg_copy.c
+HEADERS = sg_copy.h
+OBJS    = $(SOURCES:%.c=%.o)
+CFLAGS  = -Wall -Werror -g -I.
+
+%.o: %.c $(HEADERS)
+	gcc -c $< $(CFLAGS)
+
+sg_copy: $(OBJS)
+	gcc $^ -o $@
+
+all default: sg_copy

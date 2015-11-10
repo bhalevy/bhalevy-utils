@@ -1,0 +1,91 @@
+EXERCISE                Dave Stav <dave@stav.org.il>
+January 30, 2012        052-739-2360
+================================================================================
+
+TASK 1
+
+The implementation of the three functions is located in sg_copy.c.
+For the completeness of the exercise, I also included a Makefile and a unit
+test (test.c).
+
+Additional notes:
+
+sg_copy.h: I would normally not modify the header file, since it was given as a
+requirement. However, it was lacking include guards which are essential to
+preventing double inclusion.
+
+sg_copy.c: The implementation I chose for sg_map() includes some redundant
+checks that are only required in the first iteration (buf, length and the
+modulus). I debated between these redundant checks, and between writing a
+separate internal function for the non-first iterations. Assuming the PAGE_SIZE
+is a power of two, the checks do not consume a significant amount of CPU time,
+so I chose the implementation that has a smaller and cleaner code.
+
+During the running of sg_map(), if the memory runs out (malloc() failure), the
+list will be returned, but will contain partial data. Depending on the design of
+the whole system, other actions may be added: log, error code, and complete
+failure of the call (returning NULL).
+
+
+
+TASK 2
+
+In the code snippet (snippet_2.c) I found the following mistakes.
+
+ * Throughout the function, the structure is referenced by "rtp_packet" instead
+   of "struct rtp_packet"
+ * The malloc() function expects only one parameter
+ * The size given to malloc() is the size of a pointer, instead of the size of
+   the structure
+ * The newly allocated buffer is freed, yet still in use, and even returned to
+   the caller
+ * The pointer given as parameter is freed. This might not be a mistake,
+   depending on the design, but it seems like it should not be there. It is
+   somewhat reasonable only if the caller expects this
+ * The payload data is not copied. The field points to the same buffer of the
+   original packet. This might be the desired behavior, depending on the design
+ * The function received the header as a void* and returns a void* instead of
+   the structure. This might not be a mistake, depending on the design, but it
+   lits up a red light since the compiler is not able to perform type checking
+
+ONLY if the structure in the code attempts to parse the actual packet, then the
+following notes also apply. However, if this is an internal representation of
+the header, then these notes are irrelevant.
+
+ * No distinction of endianess in the bit fields. This is only needed if the
+   code is meant to be portable
+ * The int type may be of different sizes, depending on the architecture. It is
+   better to use types like uint32_t or equivalents to make sure that the
+   correct size is used
+ * All of the fields in the structure are int, which is usually signed
+   (depending on the architecture), while actually representing unsigned values.
+   This actually does not affect the outcome of the function, but may cause
+   problems when adding more code in the future
+ * The ssrc and timestamp fields are in the wrong order
+ * The payload_length field does not exist in the RTP header
+ * The payload field is written as a pointer to a buffer, while containing the
+   actual data. The field should be "char payload[]" if conforming to C99, or
+   treated separately, if conforming to C89 where the flexible array member is
+   not supported
+ * If the extension bit is on, then before the payload, the extension header
+   exists. Again, this does not affect the outcome of the function, but may
+   cause problems later
+ * If the padding bit is on, then the payload includes the padding. This might
+   not be a mistake if this is treated separately
+
+
+
+TASK 3
+
+The function supplied in the code snippet (snippet_3.c) will not perform as
+required. To make it work, line 9 should be changed to:
+	for (;(*i) != NULL && ((*i) != p); i = &((*i)->next)) {
+
+Without making the change, the element will indeed be removed from the list, but
+all the other elements preceding it will be removed as well. In addition, the
+memory for those elements will not be freed. In the case where the first element
+is to be deleted, the function will actually work as expected, but only in this
+case.
+
+Also, if the element is not found in the list, the packet will be freed anyway.
+This may or may not be desired.

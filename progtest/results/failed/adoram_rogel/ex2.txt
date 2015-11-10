@@ -1,0 +1,12 @@
+
+snippet_2.c mistakes
+=====================
+
+1. Missing typedef for rtp_packet (as rtp_packet_t) for use in create_packet.
+2. In struct rtp_packet, I would use "unsigned int" type for the bitmap fields.
+3. My malloc version on CentOS (RedHat 5) is different, it only uses one argument,
+   unlike calloc.
+4. In create_packet, "free(ptr)" causes a segmentation fault, I'm not sure why,
+   yet. In any case, this function should just create a new packet, not delete
+   the original one.
+5. In create_packet, the "free(dummy)" after "ptr = dummy" loses the new packet and should be removed.

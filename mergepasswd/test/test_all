@@ -1,0 +1,19 @@
+#!/bin/sh
+
+source test_lib
+
+bin=../mergepasswd
+
+if [ ! -x "$bin" ]; then
+	echo $progname: cannot execute $bin 1>&2
+	exit $STATUS_INIT
+fi
+
+test_begin
+
+expect_success ./test_ok "$bin" data/ok
+expect_success ./test_fail "$bin" data/fail
+
+test_passed
+
+test_term

@@ -1,0 +1,27 @@
+* rtp_packet is not defined or used well.
+We have two options here. Use "struct rtp_packet" instead of "rtp_packet" in
+the function or write "typedef struct {...} rtp_packet;".
+
+* Line 22: malloc is misused here.
+The malloc function takes 1 parameter, which is the amount of bytes to allocate.
+Should be: dummy = (rtp_packet *)malloc(sizeof(rtp_packet));
+
+* Line 32: unnecessary free()
+This free will cause segmentation fault in line 34.
+It will cause us to loose the memory we allocated in line 22.
+The line "ptr = dummy;" causes ptr and dummy pointers to have the same address.
+Freeing dummy will cause freeing ptr as well.
+
+More things that crossed my mind...
+
+* Line 30: The user might not expect a free of his pointer inside create_packet.
+It might not be a problem if this behavior is expected, but by the name of the
+function - "create_packet" it doesn't indicate that the old packet is supposed
+to be deleted.
+
+* Line 28:
+In case we don't want to delete the user's old packet, we might want
+to hold a payload buffer of our own. "*dummy = *ptr;" only copies the pointer
+itself, without the buffer it's pointing too. Perhaps, we need to allocate
+another payload buffer and copy the contents from the old payload to the new
+one.

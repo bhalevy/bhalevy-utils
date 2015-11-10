@@ -1,0 +1,83 @@
+#!/bin/sh
+#
+# test library functions and standard environment variables
+
+progname=$(basename $0)
+STATUS_PASSED=0
+STATUS_FAILED=1
+STATUS_USAGE=2
+STATUS_ERROR=3
+
+if [ -z "$test_num" ]; then
+	export test_num=001
+else
+	test_num=$(awk 'BEGIN { printf("%03d\n", '"$test_num"' + 1); }')
+fi
+
+if [ -z "$results_base" ]; then
+	export results_base="./test_results.$(date +%s)"
+	export log_file="$results_base/log"
+	echo "$(date +%s) $progname: results will be logged to $log_file"
+fi
+
+results_dir="$results_base/$progname.$test_num"
+
+function test_term ( ) {
+	rm -rf $results_dir
+}
+
+function usage ( ) {
+	echo Usage: $progname: $* 1>&2
+	exit $STATUS_USAGE
+}
+
+function log ( ) {
+	echo "$(date +%s) $progname.$test_num: $*" >> "$log_file" || exit $STATUS_SYS
+}
+
+function pstr ( ) {
+	s="$(date +%s) $progname.$test_num: $*"
+	echo $s
+#	echo $s >> "$log_file" || exit $STATUS_SYS
+}
+
+function test_begin ( ) {
+	pstr TEST BEGIN
+}
+
+function test_passed ( ) {
+	pstr TEST PASSED
+	exit $STATUS_PASSED
+}
+
+function test_failed ( ) {
+	pstr TEST FAILED
+	exit $STATUS_FAILED
+}
+
+function expect_success ( ) {
+	cmd="$*"
+	log "$cmd": EXPECT SUCCESS
+	sh -c "$cmd" >> "$log_file" 2>&1 || {
+		pstr $cmd: failed 1>&2
+		test_failed
+	}
+	log "$cmd": PASSED
+}
+
+function expect_failure ( ) {
+	cmd="$*"
+	log "$cmd": EXPECT FAILURE
+	sh -c "$cmd" >> "$log_file" 2>&1 && {
+		pstr $cmd: succeeded unexpectedly 1>&2
+		test_failed
+	}
+	log "$cmd": PASSED
+}
+
+mkdir -p "$results_dir" || {
+	pstr "cannot mkdir $results_dir"
+	exit $STATUS_SYS
+}
+
+

@@ -1,0 +1,24 @@
+1. Please find attached a header file containing definitions
+for a scatter-gather data type and a list of functions to implement:
+
+* sg_map maps a memory region into a scatter gather list
+* sg_destroy destroys a scatter gather list
+* sg_copy copies 'count' bytes from src to dest starting at 'offset'
+
+* ptr_to_phys and phys_to_ptr map a pointer to a physical address and vice-verse
+  and are implemented as inline functions.  Please use those to convert virtual
+  memory addresses into physical addresses and vice verse.
+
+2. Find all possible mistakes (there might be none) in the following
+piece of code. The function apparently takes an RTP packet, and
+creates a new RTP packet with all the fields same as the previous RTP
+packet except that the sequence number and timestamp are changed.
+
+<see attached snippet_2.c>
+
+3. Pointer manipulation: The following function is suppose to delete
+an element from a singly linked list. Will it work? If yes, show the
+steps when the linked list has initially 4 elements and the last
+element is supposed to be deleted. If not, point out a mistake.
+
+<see attached snippet_3.c>

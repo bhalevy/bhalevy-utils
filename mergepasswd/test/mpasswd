@@ -1,0 +1,51 @@
+nm-openconnect:x:492:483:NetworkManager user for OpenConnect:/:/sbin/nologin
+mail:x:8:12:mail:/var/spool/mail:/sbin/nologin
+rtkit:x:498:497:RealtimeKit:/proc:/sbin/nologin
+games:x:12:100:games:/usr/games:/sbin/nologin
+root:x:0:0:root:/root:/bin/bash
+sync:x:5:0:sync:/sbin:/bin/sync
+ntp:x:38:38::/etc/ntp:/sbin/nologin
+MDT:x:10002:10002::/home/MDT:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+usbmuxd:x:113:113:usbmuxd user:/:/sbin/nologin
+nscd:x:28:494:NSCD Daemon:/:/sbin/nologin
+shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+gdm:x:42:479::/var/lib/gdm:/sbin/nologin
+pulse:x:491:481:PulseAudio System Daemon:/var/run/pulse:/sbin/nologin
+radvd:x:75:75:radvd user:/:/sbin/nologin
+rpc:x:32:32:Rpcbind Daemon:/var/lib/rpcbind:/sbin/nologin
+operator:x:11:0:operator:/root:/sbin/nologin
+ftp:x:14:50:FTP User:/var/ftp:/sbin/nologin
+bhalevy:x:711:100::/home/bhalevy:/bin/bash
+qemu:x:107:107:qemu user:/:/sbin/nologin
+oprofile:x:16:16:Special user account to be used by OProfile:/home/oprofile:/sbin/nologin
+gopher:x:13:30:gopher:/var/gopher:/sbin/nologin
+uucp:x:10:14:uucp:/var/spool/uucp:/sbin/nologin
+avahi:x:496:493:avahi-daemon:/var/run/avahi-daemon:/sbin/nologin
+haldaemon:x:68:492:HAL daemon:/:/sbin/nologin
+halt:x:7:0:halt:/sbin:/sbin/halt
+vsx0:ol7H344Ih.pzc:679:255:QA Test User vsx0:/usr/tet/vsx4:/bin/tcsh
+vsx1:amkjkSP6m2Qac:680:256:QA Test User vsx1:/usr/tet/vsx1:/bin/tcsh
+vsx2:/nLnGbdgPYHAk:681:257:QA Test User vsx2:/usr/tet/vsx2:/bin/tcsh
+abrt:x:497:495::/etc/abrt:/sbin/nologin
+backuppc:x:489:249::/var/lib/BackupPC:/sbin/nologin
+hsqldb:x:96:96::/var/lib/hsqldb:/sbin/nologin
+bharrosh:x:923:100::/home/bharrosh:/sbin/nologin
+avahi-autoipd:x:499:499:avahi-autoipd:/var/lib/avahi-autoipd:/sbin/nologin
+nobody:x:99:99:Nobody:/:/sbin/nologin
+tcpdump:x:72:72::/:/sbin/nologin
+smolt:x:493:487:Smolt:/usr/share/smolt:/sbin/nologin
+vcsa:x:69:498:virtual console memory owner:/dev:/sbin/nologin
+dbus:x:81:81:System message bus:/:/sbin/nologin
+rpcuser:x:29:29:RPC Service User:/var/lib/nfs:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+openvpn:x:495:491:OpenVPN:/etc/openvpn:/sbin/nologin
+mysql:x:27:27:MySQL Server:/var/lib/mysql:/bin/bash
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+guest:x:500:500:Guest:/home/guest:/bin/bash
+nfsnobody:x:4294967294:4294967294:Anonymous NFS User:/var/lib/nfs:/sbin/nologin
+shachars:x:500:100::/home/shachars:/bin/bash
+lior:x:503:100::/home/lior:/bin/bash
+elad:x:501:100::/home/elad:/bin/bash
+danit:x:502:100::/home/danit:/bin/bash

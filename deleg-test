@@ -1,0 +1,23 @@
+# cat deleg-test 
+#!/bin/sh
+
+m=/mnt/localhost;
+f=$m/foo;
+for v in 4 4.1; do
+	mount -o vers=$v localhost:/ $m;
+	rm -rf $f;
+	date > $f
+	{ tail -f $f & };
+	sleep 1;
+	{ tail -f $f & };
+	sleep 2;
+	date >> $f;
+	sleep 2;
+	killall tail;
+	{ while sleep 1; do date; done > $f & }
+	{ tail -f $f & };
+	sleep 3;
+	killall tail;
+	killall date;
+	umount $m;
+done

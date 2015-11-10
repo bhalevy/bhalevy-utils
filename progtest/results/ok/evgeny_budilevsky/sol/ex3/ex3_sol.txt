@@ -1,0 +1,17 @@
+The remove_from_pending_list doesn't work correctly.
+
+The loop "for (;(*i) != NULL && ((*i) != p); *i = ((*i)->next)) {"
+modifies the global variable pending_list during each iteration
+when "*i = ((*i)->next)" performed.
+
+So in case we have p inside the linked list at the end of 
+the iteration pending_list will point to the memory where p is pointing. 
+It will then assign the next element to pending_list and release p, so that 
+at the end pending_list will be equal to the memory address pointed by element after p.
+
+If element p is not inside the list at the end of the iteration 
+pending_list will be equal to NULL.
+
+To summarize instead of removing the element p from the list, 
+this function modifies the head of the list to point to the next 
+element after p (or NULL if no such element exists)

@@ -1,0 +1,36 @@
+From d21857a8f24ac9072b11baf65cc6d061ccbd126f Mon Sep 17 00:00:00 2001
+From: gilad <gilad@gilad>
+Date: Mon, 31 Oct 2011 19:38:45 +0200
+Subject: [PATCH 1/3] RTP: use struct keyword
+
+rtp_packet is a struct and all references to it should be using the
+struct keyword.
+
+Signed-off-by: gilad <gilad@gilad>
+---
+ snippet_2.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/snippet_2.c b/snippet_2.c
+index 6a69e0f..de5907f 100644
+--- a/snippet_2.c
++++ b/snippet_2.c
+@@ -15,11 +15,11 @@ struct rtp_packet {
+ 
+ void *create_packet(void *p)
+ {
+-	rtp_packet *ptr;
+-	rtp_packet *dummy;
++	struct rtp_packet *ptr;
++	struct rtp_packet *dummy;
+ 
+-	ptr = (rtp_packet *) p;
+-	dummy = (rtp_packet *)malloc(1, sizeof(rtp_packet *));
++	ptr = (struct rtp_packet *) p;
++	dummy = (struct rtp_packet *)malloc(1, sizeof(struct rtp_packet *));
+ 
+ 	if (dummy == NULL) {
+ 		return NULL;
+-- 
+1.7.4.1
+

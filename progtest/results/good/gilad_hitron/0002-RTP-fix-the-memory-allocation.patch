@@ -1,0 +1,34 @@
+From 9c73abb0760d0dea711c6a39b06b3a6790fd50d4 Mon Sep 17 00:00:00 2001
+From: gilad <gilad@gilad>
+Date: Mon, 31 Oct 2011 19:43:37 +0200
+Subject: [PATCH 2/3] RTP: fix the memory allocation
+
+1. Allocate enough space for a full packet (not just a pointer)
+2. Use calloc so the packet will be initialized to zero
+
+I am assuming it was intended to use calloc because the call
+uses two input arguments (to use malloc only one input argumnet
+is needed).
+
+
+Signed-off-by: gilad <gilad@gilad>
+---
+ snippet_2.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/snippet_2.c b/snippet_2.c
+index de5907f..6162ae2 100644
+--- a/snippet_2.c
++++ b/snippet_2.c
+@@ -19,7 +19,7 @@ void *create_packet(void *p)
+ 	struct rtp_packet *dummy;
+ 
+ 	ptr = (struct rtp_packet *) p;
+-	dummy = (struct rtp_packet *)malloc(1, sizeof(struct rtp_packet *));
++	dummy = (struct rtp_packet *)calloc(1, sizeof(struct rtp_packet));
+ 
+ 	if (dummy == NULL) {
+ 		return NULL;
+-- 
+1.7.4.1
+

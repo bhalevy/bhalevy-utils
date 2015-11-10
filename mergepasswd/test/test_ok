@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# test success
+# merge two passwd files
+# expect success
+# run again on merged result
+# second pass should be same as first
+
+source test_lib
+
+if [ $# != 2 ]; then
+	echo $0: $#
+	usage bin data_dir
+fi
+
+bin="$1"
+data_dir="$2"
+result1=$results_dir/test_ok/pass1
+result2=$results_dir/test_ok/pass2
+
+test_begin
+
+expect_success mkdir -p $result1 $result2
+expect_success $bin $data_dir/{l,r}{passwd,shadow} $result1/m{passwd,shadow}
+expect_success $bin $result1/m{passwd,shadow} $data_dir/r{passwd,shadow} $result2/m{passwd,shadow}
+expect_success diff -u {$result1,$result2}/mpasswd
+expect_success diff -u {$result1,$result2}/mshadow
+
+test_passed

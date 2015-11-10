@@ -1,0 +1,27 @@
+Solution to test questions are found in the following files:
+=============================================================
+
+snippet_2.c - problem 2 with annotations explaining the problems/solutions in the code
+snippet_2_solution.c - clean code solution for problem 2 (RTP packet copy/modify)
+snippet_3.c - problem 3 with annotations explaining the problems/solutions in the code
+snippet_3_solution.c - clean code solution for problem 3 (linked list item removal)
+
+sg_copy/  - directory holding all files related to problem 1 (scatter-gather maps)
+	sg_copy/sg_copy.c - implementation of required function for the sg_copy problem.
+	sg_copy/sg_copy.h - original header file (with minor modification - wrapping #ifndef.)
+	sg_copy/sg_copy_main.c - test program for quick and dirty testing of sg_copy.
+	sg_copy/makefile - makefile for compiling sg_copy solution and tester.
+	
+Some notes on sg_copy compilation:
+
+The makefile attached will compile the code with a DEBUG flag set.
+This is done mainly to bypass the call to malloc and replace it with printf. 
+Calling malloc will crash the program as everything is ever so scatterred...
+The DEBUG flag will also add debug printing to the sg_destroy() function .
+
+Performing 'make all' will produce an executable named sgtest - that tests the 3 
+scatter-gather functions.
+
+
+
+	
