@@ -1,0 +1,8 @@
+#!/bin/sh
+
+args="$*"
+if [ "$args" == "" ]; then
+	args=...
+fi
+
+p4 opened $args | p4files

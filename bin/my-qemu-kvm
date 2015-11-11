@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+	echo Usage: $(basename $0) image [mem] 1>2
+	exit
+fi
+img="$1"
+mem="$2"
+if [ -z "$mem" ]; then
+	mem=1024M
+fi
+qemu-kvm -drive file="$img",if=virtio,boot=on -net nic -net user -m "$mem" -localtime

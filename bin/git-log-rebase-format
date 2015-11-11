@@ -1,0 +1,2 @@
+#!/bin/sh
+exec git log --reverse --pretty=tformat:"pick %h %s" $*

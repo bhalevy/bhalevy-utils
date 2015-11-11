@@ -1,0 +1,7 @@
+export GIT_EDITOR=vi
+
+alias gr="egrep -R"
+
+function nd () { mkdir -p "$1"; cd "$1"; }
+
+source ~/bin/git-completion.bash

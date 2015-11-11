@@ -1,0 +1,2 @@
+#!/bin/sh
+exec cons LOCK=off KOBJ=-2.6.25-panlayout-mp $*

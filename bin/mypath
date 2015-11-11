@@ -1,0 +1,60 @@
+#!/bin/sh
+
+cmd=awk
+os=`uname -s`
+arch=`uname -m`
+archspec=$os-$arch
+if [ $os = SunOS ]; then
+	cmd=nawk
+fi
+
+$cmd -v d=$archspec '
+BEGIN {
+  pre[npre++] = ".";
+  pre[npre++] = ENVIRON["HOME"] "/home/bin/" d;
+#  pre[npre++] = ENVIRON["HOME"] "/home/bin/sh";
+  pre[npre++] = ENVIRON["HOME"] "/home/bin";
+#  pre[npre++] = ENVIRON["HOME"] "/home/net/" d "/bin";
+#  pre[npre++] = ENVIRON["HOME"] "/home/net/sh";
+  pre[npre++] = "/sbin";
+  pre[npre++] = "/bin";
+  pre[npre++] = "/usr/sbin";
+  pre[npre++] = "/usr/bin";
+  pre[npre++] = "/usr/local/sbin";
+  pre[npre++] = "/usr/local/bin";
+
+#  post[npost++] = "/usr/net/bin";
+#  post[npost++] = "/pan/test/bin";
+  if (d ~ /^SunOS/) {
+#    pre[npre++] = "/usr/ucb";
+    pre[npre++] = "/opt/SUNWspro/bin";
+    pre[npre++] = "/usr/ccs/bin";
+  }
+
+  noldpath = split(ENVIRON["PATH"], a, ":");
+
+  for (i = 0; i < npre; i++) {
+      newpath[npath++] = pre[i];
+      newidx[pre[i]] = 1;
+  }
+  for (i = 1; i <= noldpath; i++) {
+    if (!newidx[a[i]]) {
+      newpath[npath++] = a[i];
+      newidx[a[i]] = 1;
+    }
+  }
+  for (i = 0; i < npost; i++) {
+    if (!newidx[post[i]]) {
+      newpath[npath++] = post[i];
+    }
+  }
+
+  s = newpath[0];
+  for (i = 1; i < npath; i++) {
+   s = s ":" newpath[i];
+  }
+  print s;
+
+  exit(0);
+}
+'

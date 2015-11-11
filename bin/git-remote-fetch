@@ -1,0 +1,88 @@
+#!/bin/bash
+
+progname=`basename $0`
+usage ()
+{
+	{
+		echo "Usage: $progname [-Aadt] [-r origin] [branch ...]"
+		echo "Options:"
+		echo "  -A         fetch all remotes"
+		echo "  -a         fetch all remote branches"
+		echo "  -d         dry-run, just print the git commands"
+		echo "  -t         fetch tags"
+		echo "  -r origin  name of remote tree"
+		echo "  branch ... branches to fetch"
+		echo
+		echo "Branch names may contain * or ? patterns"
+	} 1>&2
+	exit 1
+}
+
+Aflag=0
+dflag=0
+tflag=0
+remotes=origin
+patterns=""
+opts=""
+while getopts ":Aadtr:" opt; do
+	case $opt in
+	A)
+		Aflag=1
+		patterns='.*';;
+	a)
+		patterns='.*';;
+	d)
+		dflag=1;;
+	t)
+		tflag=1;;
+	r)
+		remotes="$OPTARG"
+		patterns='.*';;
+	*)
+		usage;;
+	esac
+done
+shift $((OPTIND-1))
+
+if [ $# != 0 ]; then
+	patterns=`for i; do
+		if [[ "$i" != ^* && "$i" != *$ ]]; then
+			i="^$i\$";
+		fi
+		echo -n "$i|" | sed -e 's/\./\\\&/g' -e 's/[\\]/\\\&/g' -e 's/[*?]/.&/g'
+	done | sed 's/|$//'`
+fi
+
+if [ "$patterns" == "" ]; then
+	usage
+fi
+
+if [ $Aflag != 0 ]; then
+	remotes=`git remote`
+fi
+
+if [ $tflag != 0 ]; then
+	opts="$opts --tags"
+fi
+
+for origin in $remotes; do
+	branches=`git branch -r | awk -F '[ /]+' -v o="^$origin\$" -v p="$patterns" '
+			$(NF-1) ~ o && $NF ~ p { print $NF }'`
+
+	if [ "$branches" = "" ]; then
+		echo "$progname: no remote branches found for remote tree '$origin'" 1>&2
+	fi
+
+	for i in $branches; do
+		br="$i"
+		if [[ ! "$br" = *:* ]]; then
+			br="$br:$br"
+		fi
+		cmd="git fetch $opts \"$origin\" \"+$br\""
+		if [ $dflag = 0 ]; then
+			eval $cmd
+		else
+			echo $cmd
+		fi
+	done
+done

@@ -1,0 +1,102 @@
+#!/bin/sh
+
+pname=`basename $0`
+refsdir=".git/refs"
+all="heads remotes tags"
+outdir="/tmp/git-branch-tree.$$"
+
+what=""
+declare -a heads=
+
+error() {
+	echo "$pname: $*" 1>&2
+}
+
+usage() {
+	{
+	echo "Usage: $pname [option ... | head ...]"
+	echo "options:"
+	echo "  -a --all:     show tags, remote, and local branches (default)"
+	echo "  -t --tags:    show only tags"
+	echo "  -l --local:   show only local branches"
+	echo "  -r --remotes: show only remote branches"
+	} 1>&2
+	exit 1
+}
+
+errorexit() {
+	error "$*"
+	exit 1
+}
+
+usageerror() {
+	error "$*"
+	usage
+}
+
+if [ ! -d "$refsdir" ]; then
+	echo "$pname: $refsdir not found. Command must be executed at the git tree's root" 1>2
+	usage
+fi
+
+while [ "$1" != "" ]; do
+	case "$1" in
+	(-a|--all)	what="all";;
+	(-t|--tags)	what="tags";;
+	(-l|--local)	what="heads";;
+	(-r|--remotes)	what="remotes";;
+	-*)		usage;;
+	*)
+		heads=($*)
+		shift $#;;
+	esac
+	shift
+done
+
+if [ "$what" = "" ]; then
+	what="$all"
+fi
+
+if [ ${#heads[@]} = 0 ]; then
+	for i in $what; do
+		heads=("${heads[@]}" `echo $refsdir/$i/*`)
+	done
+else
+	h=("${heads[@]}")
+	unset heads
+	for i in "${h[@]}"; do
+		f=`echo $refsdir/*/$i`
+		if [ `echo $f | wc -w` != 1 ]; then
+			usageerror "head $i is ambiguous"
+		fi
+		if [ ! -f $f ]; then
+			usageerror "head $i not found"
+		fi
+		heads=("${heads[@]}" "$f")
+	done
+fi
+
+mkdir $outdir || {
+	errorexit "cannot mkdir $outdir"
+}
+
+sedcmd="sed -n"
+for i in `cat "${heads[@]}" | sort -u`; do
+	fhs=`grep -l $i "${heads[@]}"`
+	hs=""
+	for f in $fhs; do
+		hs="$hs `echo $f | sed -e 's/\//\\\//g'`"
+echo $hs
+	done
+	sedcmd="$sedcmd -e s/$i/$hs/p"
+done
+
+#pattern="`echo $pattern | tr ' ' '|'`"
+
+while [ ${#heads[@]} != 0 ]; do
+	h=${heads[0]}
+	unset heads[0]
+	sha=`cat "$h"`
+echo git-log --pretty=format:%H $sha '|' $sedcmd
+	git-log --pretty=format:%H $sha | $sedcmd
+done

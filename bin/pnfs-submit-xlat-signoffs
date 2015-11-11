@@ -1,0 +1,5 @@
+#!/bin/sh
+
+sed 's/Andy Adamson<andros@netapp.com>/Andy Adamson <andros@netapp.com>/
+s/Andy Adamson *<andros@umich.edu>/Andy Adamson <andros@citi.umich.edu>/
+s/Fred Isaman *<iisaman@umich.edu>/Fred Isaman <iisaman@citi.umich.edu>/' $* | sort -u

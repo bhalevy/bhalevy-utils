@@ -1,0 +1,13 @@
+#!/bin/sh
+
+progname=$(basename $0)
+if [ $# -lt 2 ]; then
+	echo Usage: $progname pattern file ... 1>&2
+	exit 1
+fi
+
+pat=$1
+shift
+for i; do
+	sed "$pat" $i > $i.gnr && mv $i{.gnr,}
+done

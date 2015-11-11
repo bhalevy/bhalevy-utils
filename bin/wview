@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if [ $# != 2 ]; then
+	echo Usage: $0 cmd url 1>&2
+	exit 1
+fi
+
+cmd="$1"
+url="$2"
+
+cd /tmp
+wget "$url" && "$cmd" $(basename "$url") >/dev/null 2>&1

@@ -1,0 +1,7 @@
+#!/bin/sh
+
+git diff $* | awk '/^diff/ {
+	s=$3;
+	sub(/^a\//, "", s);
+	print s;
+}'

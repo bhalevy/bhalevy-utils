@@ -1,0 +1,26 @@
+#!/bin/bash
+
+docmd="sh"
+if [ "$1" = -n ]; then
+	docmd="cat"
+	shift
+fi
+
+basedirs="/home/bhalevy/dev/p4* /home/bharrosh/dev/p4*"
+# dest=/mnt/fs2/backup
+dest=/backup
+nbackups=1
+for i in `find $basedirs -maxdepth 1 -type d`; do (
+	cd $i
+	files=`p4opened 2>/dev/null`
+	if [ "$files" != "" ]; then {
+		for j in `seq 1 $nbackups`; do 
+			echo mv "$dest$i.`echo $j 1 - p | dc`" "$dest$i.$j"
+		done
+		echo rm -rf "$dest$i.$j"
+		echo mkdir -p "$dest$i"
+		for f in $files; do
+			echo cp -vp "$f" "$dest$i/$f"
+		done
+	} | $docmd; fi
+); done

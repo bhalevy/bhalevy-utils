@@ -1,0 +1,8 @@
+#!/bin/sh
+
+for i in /usr/sbin/{exportfs,rpc.mountd,nfsstat}; do
+	test -f $i.orig || mv $i{,.orig}
+done
+cp utils/exportfs/exportfs /usr/sbin/exportfs
+cp utils/mountd/mountd /usr/sbin/rpc.mountd
+cp utils/nfsstat/nfsstat /usr/sbin/nfsstat

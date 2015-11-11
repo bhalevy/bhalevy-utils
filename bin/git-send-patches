@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# --suppress-from --suppress-cc self --suppress-cc cc --suppress-cc sob --suppress-cc author
+exec git-send-email --from "Benny Halevy <bhalevy@panasas.com>" --no-chain-reply-to --cc-cmd mailq-flush $*

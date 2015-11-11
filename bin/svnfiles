@@ -1,0 +1,89 @@
+#!/bin/bash
+
+usage() {
+    echo "Usage: $0 [-fad] dir" 1>&2
+    exit 1
+}
+
+fflag=0
+dflag=0
+while [[ "$1" = -* ]]; do
+  case "$1" in
+  -f)
+    fflag=1
+    ;;
+  -d)
+    dflag=1
+    ;;
+  -a)
+    dflag=1
+    fflag=1
+    ;;
+  *)
+    usage;;
+  esac
+  shift
+done
+
+if [ "$1" = "" ]; then
+    usage
+fi
+
+if test $fflag -eq 0 -a $dflag -eq 0; then
+    fflag=1
+fi
+
+dir=$1
+f=$dir/.svn/entries
+if [ ! -f $f ]; then
+    echo $0: cannot find $f 1>&2
+    exit
+fi
+
+if [ "$2" = 5 ]; then
+    exit
+fi
+
+awk -vdflag=$dflag -vfflag=$fflag -vdir=$dir -vcmd=$0 -vnest=$2 '
+$1 ~ /^name=/ {
+    split($1, a, "=");
+    name=a[2];
+    if (!match(name, " ")) {
+        if (name ~ /^".*"$/) {
+            name = substr(name, 2, length(name)-2);
+        }
+    }
+    next;
+}
+
+/kind="dir"/ {
+    if (name == "") {
+	next;
+    }
+    if (dflag) {
+        print dir "/" name "/";
+    }
+    dirs[ndirs++] = name;
+    name = "";
+    next;
+}
+
+fflag && /kind="file"/ {
+    print dir "/" name;
+    name = "";
+    next;
+}
+
+END {
+    for (i = 0; i < ndirs; i++) {
+        s=sprintf("%s %s %s/%s %d",
+            cmd,
+            dflag ? "-d" : "",
+            dir,
+            dirs[i],
+            nest+1);
+        name = "";
+        system(s);
+    }
+}
+' $f

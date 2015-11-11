@@ -1,0 +1,6 @@
+#!/bin/sh
+#
+# take a p4 checkpoint
+# root=/mnt/fs2/backup/perforce
+root=/backup/perforce
+exec /usr/net/bin/p4 $* admin checkpoint -z $root/`date +%s`

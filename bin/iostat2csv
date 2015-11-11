@@ -1,0 +1,20 @@
+#!/bin/sh
+
+awk '
+BEGIN {
+  OFS=",";
+}
+/tty/ {
+  next;
+}
+/tin/ {
+  if (!first++)
+    print;
+  next;
+}
+
+first {
+  print;
+}' $* | sed "s/^  *//
+s/0100$/0,100/
+s/  */,/g"

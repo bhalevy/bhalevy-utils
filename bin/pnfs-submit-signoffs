@@ -1,0 +1,7 @@
+#!/bin/sh
+
+for i; do
+	sha=$(awk '{ print substr($2, 1, 8); exit; }' $i)
+	patch-signoffs $i > $sha.signoffs
+	patch-desc $i > $sha.desc
+done

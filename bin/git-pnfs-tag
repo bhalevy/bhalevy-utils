@@ -1,0 +1,4 @@
+#!/bin/sh
+last=$(eval echo "$"$#)
+echo git tag -a -m $last $*
+exec git tag -a -m $last $*

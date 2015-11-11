@@ -1,0 +1,228 @@
+#!/bin/sh
+#-------
+# cleancache - remove files with link count 1 from a given cons cache
+#
+# Usage: cleancache [-s] dir...
+#
+# -s    remove the files slowly (this is a workaround for a problem seen
+#       on FreeBSD 4.3, where removing many files rapidly leads to the
+#       syncer eating all the CPU for perhaps as much as forty minutes)
+#
+# @maintainer dsanderson
+# @author mju
+#-------
+
+export SHELL;   SHELL=/bin/sh
+
+export HOST;    HOST=`  if      [ -x /bin/uname ]
+                        then    /bin/uname -n
+                        else    /bin/hostname
+                        fi | sed 's/\..*//'`
+
+opt_s=
+case $1 in
+-s)     opt_s=true
+        shift
+        ;;
+esac
+
+if      [ $# -lt 1 ]
+then    echo "$0: usage: $0 [-s] cachedir[/<platform>] [cachedir ...]"
+        exit 1
+fi
+
+# unix_time - prints seconds since the epoch
+#
+# On some systems (e.g. FreeBSD) we can get this with date +%s, but
+# others (e.g Solaris), not.
+
+unix_time()
+{
+        perl -e '{ print time."\n" }'
+}
+
+# log - write a log record for cleaning the given cache directory
+#
+# The format of the records is intended to be easy for trace_visual to
+# examine.
+
+log()   # $dir $time [begin|end] duration
+{
+        ldir=$1; shift
+        ltime=$1; shift
+        lword=$1; shift
+        lduration=$1; shift
+
+        # Note that the logfile must have a link count > 1 in order to
+        # prevent the find from removing it.
+
+        dotfile=$ldir/.Log
+        regfile=$ldir/Log
+
+        if      [ ! -f $regfile ]
+        then    cp /dev/null $regfile
+                chmod 666    $regfile
+                rm -f $dotfile
+                ln $regfile $dotfile
+        fi
+        if      [ ! -f $regfile ]
+        then    echo "failed to create $regfile"
+                return
+        fi
+        case `find $regfile -links 1 -print` in
+        '')     ;;
+        *)      echo "$regfile has only one link"
+                return
+                ;;
+        esac
+
+        echo "[$ltime:000000000] cleancache-v1 $lword $HOST:$$ $lduration" >> $regfile
+}
+
+for dir in $*
+do
+        dir_given=$dir
+        pattern="$dir/*/*"
+        case $dir in
+        */cache |\
+          cache )
+                ;;
+        *)
+                case `dirname $dir` in
+                */cache |\
+                  cache )
+                        pattern="$dir/*"
+                        dir=`dirname $dir`
+                        ;;
+                *)
+                        echo "skipping $dir: does not end in 'cache'"
+                        continue
+                        ;;
+                esac
+                ;;
+        esac
+
+        # The following identifies a cons cache by its "shape"
+        # without using any hardcoded platform names.  The structure
+        # of a cache is "cache/<platform>/[0-9a-f]/" (original cons)
+        # or "cache/<platform>/[0-9a-f][0-9a-f]/" (panasas cons).
+        # The <platform> directory needs to have single-character
+        # subdirectories (original cons) or double-character
+        # subdirectories (panasas cons).  This is unusual enough to
+        # qualify as a signature.
+        #
+        # This also provides for cleaning the cache when it happens to
+        # contain multiple platform subdirectories, which might happen
+        # during the transition to a new platform with cross compilers.
+
+        dir_list=
+        dir_junk=
+        for d in $pattern
+        do
+                if      [ ! -d $d ]
+                then    continue
+                fi
+
+                # With our internal mods to cons, we no longer have
+                # single-character subdirs in cons cache directories.
+                # We preserve the code to recognize them, though, in
+                # case panfs ever supports large directories well enough
+                # to let us remove the hacks we made to cons.
+
+                case $d in
+                */cache/*/[0-9a-f] |\
+                  cache/*/[0-9a-f] )
+                        dir_list="$dir_list $d"
+                        ;;
+                */cache/*/[0-9a-f][0-9a-f] |\
+                  cache/*/[0-9a-f][0-9a-f] )
+                        dir_list="$dir_list $d"
+                        ;;
+                *)      dir_junk="$dir_junk $d"
+                        ;;
+                esac
+        done
+
+        case $dir_junk in
+        ?*)     echo "skipping $dir: probably not a cache directory (unexpected subdirectories $dir_junk)"
+                continue
+                ;;
+        esac
+
+        case $dir_list in
+        '')     echo "skipping $dir: probably not a cache directory (no single-character or double-character subdirectories)"
+                continue
+                ;;
+        esac
+
+        echo "cleaning cons cache in $dir_given"
+
+        # We write log records at the beginning and end of the run, so
+        # we can see how long each pass takes.
+
+        t0=`unix_time`
+        log $dir $t0 begin -
+
+        # FreeBSD 4.3 has a problem (perhaps related to soft updates)
+        # where if you try to free up disk space too fast the syncer
+        # eats all the CPU for ages.  Removing files more slowly seems
+        # to avoid this problem.
+        #
+        # Empirically, 3 files at a time with a 1-second sleep seems to
+        # work fine.
+        #
+        # Empirically, 9 files at a time with a 1-second sleep seems to
+        # be a bit too much.
+        #
+        # 6 seems dangerous.
+        #
+        # 5 is living on the wild side.
+        #
+        # 4 is on the edge.
+        #
+        # With 3, the syncer activity goes up and down, but does not
+        # seem to exceed 50% CPU.
+        #
+        # Note that in ``sh -c "cmd" a1 a2 a3...'', a1 is made available
+        # to cmd as $0, and a2, a3, ... are available in $@. Though this
+        # is consistent on our current Unix platforms, I believe I've
+        # seen shells where a1 is included in $@. To be on the safe
+        # side, I'm supplying a dummy argument for a1.
+
+        # Some versions of xargs will run their command with no
+        # arguments when their input is empty.  If find yields no files
+        # to remove, you then get a message like
+        #
+        #       rm: too few arguments
+        #
+        # We could solve this by first doing the find, and then checking
+        # to see if it produced anything, and then doing the removes.
+        # However, it seems like this would make the whole process take
+        # longer, because the removes could not occur in parallel with
+        # the find.  So instead we create a dummy file, so that rm
+        # always has something to remove.
+
+        tmp=${TMPDIR:-/tmp}/cc$$
+        if      touch $tmp
+        then    :
+        else    echo "failed to create $tmp"
+                exit 1
+        fi
+
+        {
+                for d in $dir_list
+                do      find $d -type f -links 1 -print
+                done
+                echo $tmp
+        } |
+        case $opt_s in
+        ?*)     xargs -n 4 $SHELL -c 'rm "$@"; echo -n .; sleep 1' /$$-ARGV0-$$/
+                ;;
+        *)      xargs rm
+                ;;
+        esac
+
+        t1=`unix_time`
+        duration=`expr $t1 - $t0`
+        log $dir $t1 end   $duration
+done

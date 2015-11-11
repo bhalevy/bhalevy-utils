@@ -1,0 +1,21 @@
+#!/bin/bash
+
+if [ $# -lt 2 ]; then
+	echo "Usage: `basename $0` [grep_options] pattern path" 1>&2
+	exit 1
+fi
+
+cmd="egrep --color=auto -R --include='*.[CcHhly]' --include='*.cc' --include='*.rpc' --include='Makefile*' --include='*config*' --include='*build*' --include='*.sh' --include='*.awk' --include='*.py' --include='*.pl' --include='*.cfg' --include='*.init?' --include='*.proto'"
+i=1
+for arg; do
+	cmd="$cmd \"$arg\""
+#	if [ $i != $# ]; then
+#		cmd="$cmd \"$arg\""
+#	else
+#		path="$arg"
+#	fi
+	i=$(($i+1))
+done
+echo $cmd 1>&2
+#find "$pat" -name "*.[CcHhly]" -o -name "*.rpc" -o -name Conscript -o -name config -o -name kernel -o -name Makefile -o -name Kconfig -o -name Kbuild | eval xargs $cmd
+eval $cmd

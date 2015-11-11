@@ -1,0 +1,12 @@
+#!/bin/sh
+
+dirs=.
+if [ "$1" != "" ]; then
+  dirs="$*"
+fi
+
+for i in $dirs; do
+  cd $i
+  rm -f TAGS
+  find . -name "*.[chslyCH]" -o -name "*.rpc" | xargs etags --append
+done

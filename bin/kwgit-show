@@ -1,0 +1,22 @@
+#!/bin/sh
+out=/tmp/`basename $0`.patch
+tmp=$out.$$
+lock=$out.lock
+locked=0
+{ echo git show $*; git show $*; } > $tmp && {
+  chmod -w $tmp
+  if ln $tmp $lock; then
+    locked=1
+    if mv -f $tmp $out; then
+      tmp=$out
+    fi
+  fi
+
+  if [ $tmp != $out ]; then
+    echo $0: output left in $tmp 1>&2
+  fi
+  kwrite $tmp;
+  if [ $locked != 0 ]; then
+    rm -f $lock
+  fi
+}

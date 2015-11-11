@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if test $# -le 1; then
+	exec /usr/bin/awk '{ printf("%s\r\n", $0) }' $*
+fi
+
+tmpname=/tmp/u2d.$$
+awk '{ printf("%s\r\n", $0) }' $1 > $tmpname && mv $tmpname $2

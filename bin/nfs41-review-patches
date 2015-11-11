@@ -1,0 +1,42 @@
+#!/bin/bash
+
+git-rebase-tree -p upstream | awk '
+{
+	b[n++] = $1;
+}
+
+END {
+	basedir = "patches/nfs41-review/";
+	toc = basedir "toc"
+	print "echo The following series of patchsets are sent for review: > " toc
+	p = b[0];
+	for (i = 1; i < n - 1; i++) {
+		s = b[i];
+		dir = basedir s "/";
+		print "rm -rf " dir;
+		print "mkdir -p " dir;
+		print "git format-patch -n -o " dir " " p ".." s
+		print "n=`git log --pretty=oneline " p ".." s " | wc -l`"
+		p0 = dir "0000-" s ".patch";
+		print "{"
+		print "\techo \"From: Benny Halevy <bhalevy@panasas.com>\";"
+		print "\techo Date: `date`;"
+		print "\techo \"Subject: [PATCH 0/$n] " s "\";"
+		print "\techo;"
+		print "\tgit diff --stat " p ".." s
+		print "\techo;"
+		print "\tcat " dir "*.patch | \
+				grep Subject: | \
+				sed '"'"'s/Subject: //'"'"';"
+		print "} > " p0 ".tmp";
+		print "mv " p0 ".tmp " p0;
+
+		# print "{ echo; echo \"[PATCH 0/$n] " s "\";"
+		print "{ echo; cat " dir "*.patch | \
+				grep Subject: | \
+				sed '"'"'s/Subject: //'"'"';"
+		print "} >> " toc
+
+		p = s;
+	}
+}'

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+progname=`basename $0`
+
+usage ()
+{
+	echo "Usage: $progname [-b build_dir] [-r release_str] module ..."
+	exit 1
+}
+
+lookup ()
+{
+	test -f "$1" || {
+		echo $progname: $1: file not found 1>&2
+		exit 2
+	}
+}
+
+b=.
+r=$(uname -r)
+while getopts ":b:r:" opt; do
+	case $opt in
+	b)
+		b="$OPTARG";;
+	r)
+		r="$OPTARG";;
+	*)
+		usage;;
+	esac
+done
+shift $((OPTIND-1))
+
+for i; do
+	lookup "/lib/modules/$r/kernel/$i"
+	lookup "$b/$i"
+	mv "/lib/modules/$r/kernel/$i"{,.bak} || exit $?
+	cp "$b/$i" "/lib/modules/$r/kernel/$i" || exit $?
+done

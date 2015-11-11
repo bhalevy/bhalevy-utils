@@ -1,0 +1,25 @@
+#!/bin/bash
+lflag=0
+tmpflag=0
+args=""
+for i; do
+	if [[ "$i" = -L* ]]; then
+		lflag=1;
+	fi
+	if [[ "$i" = /tmp/* ]]; then
+		tmpflag=1;
+	fi
+	lastarg="$i"
+	if [[ `echo $i | wc -w` != 1 ]]; then
+		args="$args '$i'"
+	else
+		args="$args $i"
+	fi
+done
+if [ $tmpflag = 1 ] && [ $lflag = 0 ]; then
+	fname=`echo $lastarg | sed "s:$PWD/::"`
+	args="$args -L a/$fname -L b/$fname"
+fi
+
+echo diff $args
+eval diff $args

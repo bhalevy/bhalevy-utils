@@ -1,0 +1,60 @@
+#!/bin/bash
+
+from=""
+to="pnfs@linux-nfs.org"
+opts=""
+id=""
+auto=0
+while [[ "$1" == -* ]]; do
+	case "$1" in
+	(-h|--help)
+		echo "Usage: `basename $0` [-a] [-f from] [-t to] [-i in-reply-to] [git-send-email options ...] patch ..." 1>&2
+		exit 1;;
+	-a)
+		auto=1;;
+	-f)
+		from="$2"; shift;;
+	-t)
+		to="$2"; shift;;
+	-i)
+		id="$2"
+		opts="$opts --no-chain-reply-to --in-reply-to \"$id\""
+		shift;;
+	*)
+		opts="$opts $1 \"$2\""
+		shift;;
+	esac
+	shift
+done
+
+if [ "$from" = "" ]; then
+	from=`ypcat passwd | awk -F: '
+		$1 == ENVIRON["USER"] {
+		        printf("%s <%s@panasas.com>\n", $5, $1);
+		}'`
+fi
+opts="--from \"$from\" --to \"$to\" $opts"
+
+for i; do
+	cmd="git send-email $opts \"$i\""
+	if [ $auto = 0 ]; then
+		read -s -n 1 -p "$cmd"
+		echo
+	else
+		echo $cmd
+		f=1
+		while true; do
+			n=`sudo mailq | awk '/Total requests: / {print $3}'`
+			if [ "$n" == 0 ]; then
+				break;
+			else
+				if [ $f = 0 ]; then
+					echo $0: waiting for $n messages in mailq 1>&2
+				fi
+				sleep 10
+			fi
+			f=0
+		done
+	fi
+	eval $cmd
+done

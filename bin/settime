@@ -1,0 +1,30 @@
+#!/bin/sh
+
+echo $1 | awk -vargv0="`basename $0`" -F: '
+NF > 1 && NF <= 3 {
+	h=$1; m=$2; s=$3;
+	exit(0);
+}
+
+NF == 1 && length($1) >= 4 {
+	h = substr($1, 1, 2);
+	m = substr($1, 3, 2);
+	s = substr($1, 5, 2);
+	exit(0);
+}
+
+{
+	printf("%s: \"%s\": unknown format.  Use hh:mm:ss or hhmm[ss]\n",
+	       argv0, $0) > "/dev/stderr";
+	exit(1);
+}
+
+END {
+	t = systime();
+	cmd = sprintf("date %s%02d%02d%s.%02d",
+		strftime("%m%d", t),
+		h, m,
+		strftime("%Y", t),
+		s);
+	system(cmd);
+}'

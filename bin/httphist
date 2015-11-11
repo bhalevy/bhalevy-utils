@@ -1,0 +1,20 @@
+#!/bin/sh
+
+files="$*"
+if [ "$files" = "" ]; then
+	files=`ls -1 /var/log/httpd/access_log* | sort -r`
+fi
+
+progname=`basename $0`
+
+awk '{
+	ips[$1] = NR;
+	a[$1]++;
+}
+END {
+	for (ip in ips) {
+		nr = ips[ip];
+		count = a[ip];
+		printf("echo %d %d %s `host %s|awk '"'"'{print $NF;exit}'"'"'`\n", nr, count, ip, ip);
+	}
+}' $files | sort --key=2rn | sh

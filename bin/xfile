@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# xfile - Execute a command over a file into a temporary file, then
+#         rename the temporary file onto the specified file name.
+
+if [ $# -lt 2 ]; then
+	echo "Usage: $(basename $0) file command [ ... @ ... ]" 1>&2
+	exit 1
+fi
+
+name="$1"
+tmpname="$name.$$.tmp"
+shift
+for i; do
+	param="$i"
+	if [ "$param" == "@" ]; then
+		param="$name"
+	fi
+	param="\"$param\""
+	cmd="$cmd $param"
+done
+eval $cmd > "$tmpname" && mv "$tmpname" "$name"

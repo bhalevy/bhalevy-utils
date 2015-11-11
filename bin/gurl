@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ $# = 0 ]; then
+	cat
+else
+	echo $*
+fi | sed -e 's/^.*url=//' -e 's/&.*$//' -e 's/%3A/:/' -e 's:%2F:/:g'
+
+#http://www.google.com/url?sa=t&source=web&cd=2&ved=0CB0QFjAB&url=http%3A%2F%2Fwww.dell.com%2Fdownloads%2Fglobal%2Fcorporate%2Fenviron%2Fcomply%2Flatit_e6410atg.pdf&rct=j&q=regulatory%20type%20PP27LA001&ei=LpNDTuzoEZGxhAfyjZmuCQ&usg=AFQjCNFopNqs75KN1SJ_vuOy4_LrR9eUcw&cad=rja

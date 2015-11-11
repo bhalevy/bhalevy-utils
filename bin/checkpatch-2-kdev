@@ -1,0 +1,27 @@
+#!/bin/sh
+
+p="$1"
+shift
+if [ "$p" = "" ]; then
+	p="."
+fi
+awk -v p="$p" '
+/FILE:/ {
+	printf("%s/%s %s\n", p, $3, msg);
+	print;
+	if (0) {
+		printf("%s/%s %s: %s", "osd_lib", $3, msgtype, $1);
+		for (i = 4; i <= NF; i++)
+			printf(" %s\n", $i);
+		printf("\n%s\n", msg);
+	}
+	next;
+}
+
+/^(ERROR|WARNING):/ {
+	msg=$0;
+	next;
+}
+
+{ print }
+' $*

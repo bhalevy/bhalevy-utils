@@ -1,0 +1,3 @@
+#!/bin/sh
+export LC_TIME="en_DK"
+exec /usr/bin/thunderbird $*

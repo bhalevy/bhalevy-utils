@@ -1,0 +1,4 @@
+#!/bin/sh
+a=$1
+shift
+exec /usr/bin/make ARCH=$a O=.build_$a $*

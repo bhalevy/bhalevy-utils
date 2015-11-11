@@ -1,0 +1,8 @@
+#!/bin/sh
+
+f=/tmp/`basename $1`.from.$$
+cp $1 $f
+t=/tmp/`basename $2`.to.$$
+cp $2 $t
+
+tkdiff $f $t &

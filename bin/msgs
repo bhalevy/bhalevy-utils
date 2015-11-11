@@ -1,0 +1,7 @@
+#!/bin/sh
+
+cmd="less +F /var/log/messages"
+if [ `id -u` != 0 ]; then
+	cmd="sudo $cmd"
+fi
+exec $cmd

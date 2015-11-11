@@ -1,0 +1,3 @@
+#!/bin/sh
+# sudo xrandr --output VGA1 --off
+sudo xrandr --output DP1 --off

@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# how to load> ./.build_um/vmlinux ubd0=/usr0/var/local/um/Fedora7-AMD64-root_fs eth0=tuntap,,,192.168.0.117
+# in gdb do> handle SIGUSR1 pass nostop noprint
+#
+#
+ROOT_FS=/usr0/var/local/um/Fedora10-AMD64-root_fs
+# ROOT_FS=/usr0/var/local/um/Fedora10-AMD64-root_fs-1
+# ROOT_FS=/usr0/var/local/um/fc12-root_fs_no_par
+# ROOT_FS_OFFSET=",offset=32256"
+UBD_SWAP=ubd1=/usr0/var/local/um/swap_file
+FS_LOCAL_MOUNT=/usr0/var/local/um/target_rootfs
+LOCALHOST_TUN_IP=192.168.0.121
+MEM=384M
+
+um_mkkernel()
+{
+	mount -o loop$ROOT_FS_OFFSET $ROOT_FS $FS_LOCAL_MOUNT \
+		&& make ARCH=um KBUILD_OUTPUT=.build_um INSTALL_MOD_PATH=$FS_LOCAL_MOUNT modules_install
+	umount $FS_LOCAL_MOUNT
+}
+
+# ubd0=/usr0/var/local/um/Fedora7-AMD64-root_fs eth0=tuntap,,,192.168.0.121 mem=256M
+um_load()
+{
+	./.build_um/vmlinux ubd0=$ROOT_FS $UBD_SWAP eth0=tuntap,,,$LOCALHOST_TUN_IP mem=$MEM
+}
+
+um_mount()
+{
+	echo mounting image=$ROOT_FS on
+	echo $FS_LOCAL_MOUNT
+	mount -o loop,users,exec,dev,suid$ROOT_FS_OFFSET $ROOT_FS $FS_LOCAL_MOUNT
+	echo "umdo umount when done"
+}
+
+um_umount()
+{
+	umount $FS_LOCAL_MOUNT
+}
+
+
+if [ "$1" == "" ]; then
+	1="load"
+fi
+
+case $1 in
+mount)
+	um_mount
+	;;
+
+umount)
+	um_umount
+	;;
+
+mkkernel)
+	um_mkkernel
+	;;
+mkkum)
+	um_mkkernel
+	;;
+
+load)
+	um_load
+	;;
+*)
+	echo "`basename $0` mount|umount|mkkernel|mkkum|load| "
+	;;
+esac

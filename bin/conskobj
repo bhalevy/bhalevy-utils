@@ -1,0 +1,15 @@
+#!/bin/sh
+
+k=$1
+shift
+targets="$*"
+if [ "$k" = "" ]; then
+	echo "Usage: $0 kobj [target ...]" 1>&2
+	exit 1
+fi
+
+if [ "$targets" = "" ]; then
+	targets=`cons PLATFORM=`/release/releng/spool/panfs$k.rpm
+fi
+
+exec cons KOBJ=$k $targets

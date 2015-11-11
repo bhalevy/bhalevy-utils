@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# Usage: git-head [ref]
+
+if [ $# -le 1 ]; then
+	exec git-log--oneline -1 $1;
+fi
+
+args="$@"
+max=0
+for i in $args; do
+	l=$(echo -n "$i" | wc -c)
+	if [ $l -gt $max ]; then
+		max=$l
+	fi
+done
+for i in $args; do
+	printf "%*s %s\n" $max "$i" "$(git-log--oneline -1 $i)"
+done

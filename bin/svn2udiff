@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ "$1" = "" ]; then
+	echo Usage: $0 basedir 1>&2
+	exit 1
+fi
+
+root="$1"
+if [[ "$root" != .* ]]; then
+    cd "$root/.."
+    root=`basename "$root"`
+fi
+svnfiles $root | sed "s:^:diff -u /dev/null :" | sh -x 2>&1

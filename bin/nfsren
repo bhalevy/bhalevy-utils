@@ -1,0 +1,24 @@
+#!/bin/sh
+
+if [ $# -ne 3 ]; then
+	echo Usage: $(basename $0) r search replace 1>&2
+	exit 1
+fi
+
+rev="$1"
+s="$2"
+r="$3"
+
+nfsgnr "$s" "$r" && \
+git commit -a -m "$rev: $s $r" && \
+make -j5 ARCH=um O=.build_um && \
+mv .build_um/fs/nfs{,-$rev} && \
+(
+	cd .build_um/fs/nfs-$rev && \
+	for i in *.o; do
+		cp $i{,.strip} && \
+		strip $i.strip && \
+		cmp $i.strip ../nfs-r0/$i.strip;
+	done;
+)
+

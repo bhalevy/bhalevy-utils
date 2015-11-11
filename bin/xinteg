@@ -1,0 +1,29 @@
+#!/bin/bash
+
+p4flags=""
+while [[ "$1" == -* ]]; do
+        p4flags="$p4flags $1"
+        shift
+done
+
+if [ $# -lt 2 ]; then
+        echo Usage: $0 src_branch change 1>&2
+        exit 1
+fi
+
+b=$1
+c=$2
+c2=$3
+if [ "$c2" = "" ]; then
+	c2=$c
+fi
+
+b=`awk -vb=$b 'BEGIN {
+        if ( b !~ /\//)
+                print "//depot/branch/" b;
+        else
+                print b;
+}'`
+
+echo p4 integ -ti $p4flags $b/...@$c,$c2 ...
+exec p4 integ -ti $p4flags $b/...@$c,$c2 ...

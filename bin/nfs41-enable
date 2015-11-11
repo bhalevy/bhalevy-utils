@@ -1,0 +1,7 @@
+#!/bin/sh
+
+/etc/init.d/nfs stop
+echo +4.1 > /proc/fs/nfsd/versions
+stat=$?
+/etc/init.d/nfs start
+exit $stat

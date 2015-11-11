@@ -1,0 +1,133 @@
+#!/bin/bash
+
+usage () {
+	echo "Usage: $0 [-hnkK] [-j njobs] [-O arch] [bootname]" 1>&2
+	exit 1
+}
+
+nflag=0
+kflag=0
+Kflag=0
+jflag=1
+Aflag=""
+Oflag=""
+OUTDIR="."
+while [[ "$1" = -* ]]; do
+	case $1 in
+	-i)
+		echo $0: obsolete option, -i ignored 1>&2;;
+	-j)
+		jflag=$2; shift;;
+	-n)
+		nflag=$(($nflag+1));;
+	-k)
+		kflag=$(($kflag+1));;
+	-K)
+		kflag=$(($kflag+1));
+		Kflag=$(($Kflag+1));;
+	-A)
+		aARCH="$2";
+		Aflag="A=$aARCH";
+		od=".build_$2";
+		if [ -z "$OUTDIR" -a -d "$od" ]; then
+			OUTDIR="$od";
+			Oflag="O=$OUTDIR";
+		fi
+		shift;;
+	-O)
+		if [ -d "$2" ]; then
+			OUTDIR="$2";
+			Oflag="O=$OUTDIR";
+		elif [ -d ".build_$2" ]; then
+			OUTDIR=".build_$2";
+			Oflag="O=$OUTDIR";
+			if [ -z "$Aflag" ]; then
+				aARCH="$2";
+				Aflag="A=$aARCH";
+			fi
+		else
+			echo $0: cannot find $2 nor .build_$2 1>&2;
+			usage;
+			exit 1;
+		fi
+		shift;;
+	*)
+		usage;
+	esac
+        shift
+done
+
+[ -n "$Aflag" ] && export $Aflag;
+[ -n "$Oflag" ] && export $Oflag;
+if [ $kflag != 0 ]; then
+	make $Aflag $Oflag -j $jflag || exit $?
+fi
+
+if [ $Kflag != 0 ]; then
+	exit 0
+fi
+
+for i in $OUTDIR/include/linux/{version,utsrelease}.h $OUTDIR/include/generated/utsrelease.h; do
+	test -f $i && eval "v=`awk '/^#define UTS_RELEASE/ {print $3}' $i`"
+done
+if [ "$v" = "" ]; then
+	usage
+fi
+
+s="$1"
+if [ "$s" = "" ]; then
+	s="$v"
+fi
+
+# arch=`uname -i`
+arch=$aARCH
+if [ "$arch" = "" ]; then
+	arch=$(uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
+				  -e s/arm.*/arm/ -e s/sa110/arm/ \
+				  -e s/s390x/s390/ -e s/parisc64/parisc/ \
+				  -e s/ppc.*/powerpc/ -e s/mips.*/mips/)
+	if [[ "$arch" == *86* && -d arch/x86 ]]; then
+		arch=x86
+	fi
+fi
+
+bzImage=$OUTDIR/arch/$arch/boot/bzImage
+kname=/boot/vmlinux-$s
+zname=/boot/vmlinuz-$s
+sname=/boot/System.map-$s
+cname=/boot/config-$s
+iname=/boot/initrd-$s.img
+
+function run () {
+	if [ $nflag != 0 ]; then
+		echo $*
+	else
+		$*
+	fi
+}
+
+for i in $kname $zname $sname $cname $iname; do
+	test -f $i && run mv $i $i.bak && if [ $nflag = 0 ]; then
+		cp $i.bak $i && echo === $i copied to $i.bak;
+	fi
+done
+
+run make $Aflag $Oflag modules_install || exit $?
+
+run cp $bzImage $zname;
+run cp $OUTDIR/vmlinux $kname;
+run cp $OUTDIR/System.map $sname;
+run cp $OUTDIR/.config $cname;
+if [ $nflag = 0 ]; then
+	echo;
+	echo === $bzImage installed onto $zname;
+	echo === vmlinux saved as $kname;
+	echo === .config saved as $cname;
+fi
+
+# run rm -f $iname
+# run mkinitrd --allow-missing $iname $v && if [ $nflag = 0 ]; then
+# 	echo === initrd file is $iname;
+run make $Aflag $Oflag install
+
+# fi

@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Install particular modules
+
+usage ()
+{
+	echo "Usage: `basename $0` [-v] [-O build_dir] module [...]" 1>&2
+	exit 1
+}
+
+b=.
+cpopts=""
+
+while getopts :vO: opt; do
+	case $opt in
+	v) cpopts="$cpopts -v";;
+	O) b=$OPTARG;;
+	*) usage;;
+	esac
+done
+
+shift $(($OPTIND-1))
+
+r=$(make kernelversion)
+if [ "$r" != $(uname -r) ]; then
+	echo "$0: warning: install version \"$r\" is different than running kernel \"$(uname -r)\"" 1>&2
+fi
+
+for i in $*; do
+	test -f $b/$i || {
+		echo $0: $i not found 1>&2
+		exit 1
+	}
+	mv /lib/modules/$r/kernel/$i{,.bak}
+	cp $cpopts $b/$i /lib/modules/$r/kernel/$i || exit 1
+done

@@ -1,0 +1,45 @@
+#!/bin/sh
+
+verbose=0
+if [ $1 = -v ] ; then
+	verbose=1
+	shift
+fi
+
+oflags=''
+while [ $1 = -* ] ; do
+	oflags=$oflags $1
+	shift
+done
+
+case $# in
+0) echo Usage: $0 "[-v] [objdump_opts]" file ... 1>&2 ; exit 1 ;;
+1) multi=0 ;;
+*) multi=1 ;;
+esac
+
+export verbose
+export oflags
+export multi
+
+for f in $*; do
+	if [ $multi = 1 ] ; then
+		echo -n $f "";
+	fi
+	{
+		echo ibase=16
+		objdump -h $oflags $f | awk '
+			BEGIN { verbose = ENVIRON["verbose"] + 0; }
+			{
+				if (verbose)
+					print > "/dev/fd/2";
+				last = l;
+				l = $0;
+			}
+			/ALLOC/ {
+				first++;
+				split(last, a);
+				printf("%s%s", first>1 ? "+" : "", a[3]);
+			}' | tr a-f A-F ; echo ;
+	} | bc -l
+done

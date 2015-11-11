@@ -1,0 +1,7 @@
+#!/bin/sh
+if test $# -le 1; then
+	exec /usr/bin/tr -d "\r" < $1
+fi
+
+tmpname=/tmp/d2u.$$
+tr -d "\r" < $1 > $tmpname && mv $tmpname $2

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+d=.
+f=$(ls ./brscan.* | head -1)
+if [ -f "$f" ]; then
+	d=.
+else
+	d=~/brscan
+fi
+cd $d
+i=1
+for f in $(ls -rt brscan.*); do
+	mv {,$(echo $i | awk '{printf("%03d\n", $1)}')-}$f
+	i=$(($i+1))
+done

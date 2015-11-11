@@ -1,0 +1,6 @@
+#!/bin/sh
+refs=`git-cherry-list $* || exit $?`
+for i in $refs; do
+	git-cherry-pick $i
+	read -sn 1 -p "Press any key to continue..."; echo
+done

@@ -1,0 +1,28 @@
+#!/bin/sh
+
+f=$1
+if [ "$f" = "" ]; then
+	echo Usage: `basename $0` file 1>&2
+	exit 1
+fi
+
+while [ "$f" != "" ]; do
+	nf=( `p4 filelog $f | awk '
+	/change/ {
+		change = $4;
+		if ($5 == "add") {
+			print change;
+			exit(0);
+		}
+	}
+	/branch from/ {
+		f = $NF;
+		sub(/,#[0-9]+$/, "", f);
+		print change, f;
+		exit(0);
+	}'` )
+	prev=$f
+	f=${nf[1]}
+	echo change ${nf[0]} $prev
+done
+

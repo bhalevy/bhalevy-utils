@@ -1,0 +1,33 @@
+#!/bin/sh
+#-------
+# p4change - report best guess of topmost change of the current sandbox
+#
+# Usage: p4change
+#
+# @author dsanderson
+#-------
+
+# export P4BASE
+# P4BASE=`p4 info | awk '/Client root:/ { print $3 }'`
+
+export p4client
+p4client=`p4 info | awk '/Client name:/ { print $3 }'`
+
+# p4 files //$p4client/... | awk '{ change = NF - 1; print $change }'
+
+# p4 have | awk '{ print $1 }' |
+#         xargs p4 files |
+#         awk '{ change = NF - 1; print $change }' |
+#         sort -u -n -r |
+#         sed 1q
+
+# This way reports the top change, even if it only deletes files.  But,
+# it does not limit itself to what's in your sandbox.  It shows all the
+# changes that touch your sandbox view, regardless of what's in your
+# sandbox.
+# p4 changes -m 1 -s submitted //$p4client/... | awk '{ print $2 }'
+
+# This way does not report the top change if it only deletes files.
+# However, it does restrict itself to what's actually in in your
+# sandbox.
+p4 changes -m 1 -s submitted //...@$p4client | awk '{ print $2 }'

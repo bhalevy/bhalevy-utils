@@ -1,0 +1,68 @@
+#!/bin/sh
+
+if [ "$1" = "" ]; then
+	echo "Usage: `basename $0` eml ..." 1>&2
+	exit 1
+fi
+
+for in; do
+	if [ -d "$in" ]; then
+		for i in $in/*.eml; do
+			$0 "$i"
+		done
+		continue
+	fi
+	
+	out="`echo "$in" | tr -d '[:]' | tr ' 	' -- | sed -r 's/^pnfs-//' | sed -r 's/\.\.?eml$/.patch/'`"
+
+	tr -d '\r' < "$in" | awk '
+	BEGIN {
+		h=1
+	}
+
+	function field(s)
+	{
+		i = index(s, ": ");
+		name = substr(s, 1, i - 1);
+		val = substr(s, i + 2);
+		hdr[name] = val;
+		return name;
+	}
+
+	h && /^\w+: / {
+		lastfield = field($0);
+		next;
+	}
+
+	h && /^[ \t]/ {
+		sub(/^[ \t]+/, "");
+		hdr[lastfield] = hdr[lastfield] " " $0;
+		next;
+	}
+
+	(h || he) && /^$/ {
+		h=0;
+		he=1;
+		next;
+	}
+
+	he && /^From:/ {
+		field($0);
+		next;
+	}
+
+	he {
+		print "From: " hdr["From"];
+		print "Date: " hdr["Date"];
+		print "Subject: " hdr["Subject"];
+		print "";
+		he=0;
+	}
+
+	!h && !he {
+		print;
+	}
+	' > "$out"
+
+	echo "$out"
+done

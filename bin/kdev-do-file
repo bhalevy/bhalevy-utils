@@ -1,0 +1,8 @@
+#!/bin/bash
+#kdev-do-file "dir_of_makefile_with_kwgit-diff-target" "full_path_file_name" "command"
+
+cd $1
+#dir=`make kwgit-diff`/
+file=${2/$1/.}
+#cd $dir
+$3 $file

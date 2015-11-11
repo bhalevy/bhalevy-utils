@@ -1,0 +1,32 @@
+#!/bin/bash
+
+format="%d"
+
+if [ "$1" == "-f" ]; then
+	format=$2
+	shift 2
+fi
+
+case $# in
+1)
+	start=0;
+	end=$1;
+	step=1;;
+2)
+	start=$1;
+	end=$2;
+	step=1;;
+3)
+	start=$1;
+	end=$2;
+	step=$3;;
+*)
+	echo "Usage: $0 [-f format] [start] [end] [step]" 1>&2
+	exit 1;;
+esac
+
+awk -vstart=$start -vend=$end -vstep=$step -vformat=$format 'BEGIN {
+	for (i = start; i <= end; i += step) {
+		printf(format "\n", i);
+	}
+}'

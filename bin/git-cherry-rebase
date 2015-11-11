@@ -1,0 +1,47 @@
+#!/bin/bash
+#
+# Usage: git-cherry-rebase branch from to
+
+usage () {
+	echo "Usage: $progname range [onto-branch]" 1>&2
+	exit 1
+}
+
+progname=`basename $0`
+opts=""
+while [[ "$1" = -* ]]; do
+	opts="$opts $1"
+	shift
+done
+if test $# -lt 1; then
+	usage;
+fi
+
+range=$1
+branch=$2
+tmpdir=/tmp/$progname.$$
+tmpfile=$tmpdir/git-rebase-todo
+gefile=$tmpdir/git-editor
+mkdir $tmpdir || { echo $progname: cannot mkdir $tmpdir 1>&2; exit 1; }
+
+git log --reverse --pretty=tformat:"pick %h %s" $opts $range > $tmpfile
+
+GE=$GIT_EDITOR
+if [ "$GE" = "" ]; then
+	GE=vi
+fi
+cat <<EOF > $gefile
+#!/bin/sh
+awk '/^$/ || /^#/ { print }' \$1 >> $tmpfile
+cp $tmpfile \$1
+exec $GE \$1
+EOF
+chmod +x $gefile
+GIT_EDITOR=$gefile
+
+if [ "$branch" != "" ]; then
+	git checkout $branch
+fi
+git rebase -i HEAD
+
+rm -rf $tmpdir

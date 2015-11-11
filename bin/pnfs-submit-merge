@@ -1,0 +1,66 @@
+#!/bin/sh
+
+if [ $# -lt 3 ]; then
+	echo Usage: `basename $0` old_list new_list base_file ... 1>&2
+fi
+
+old_list=$1
+new_list=$2
+shift 2
+
+for i in "$old_list" "$new_list"; do
+	[ ! -f "$i" ] && { echo `basename $0`: $i: not found 1>&2; exit 1; }
+done
+
+for base; do
+	for i in "$base".blame-{old,new}; do
+		[ ! -f "$i" ] && { echo $0: $i: not found 1>&2; exit 1; }
+	done
+
+	awk -vbase="$base" -vold_list="$old_list" -vnew_list="$new_list" '
+	BEGIN {
+		while ((getline s < old_list) > 0)
+			old_tags[s] = 1;
+		close(old_list);
+		while ((getline s < new_list) > 0)
+			new_tags[s] = 1;
+		close(new_list);
+
+		old_file = base ".blame-old";
+		new_file = base ".blame-new";
+
+		while ((getline oline < old_file) > 0) {
+			if ((getline nline < new_file) <= 0) {
+				print "premature eof on " new > "/dev/stderr"
+				exit(1);
+			}
+			split(oline, a); ot = a[1];
+			split(nline, a); nt = a[1];
+
+			if (ot == nt || !old_tags[ot] || !new_tags[nt])
+				continue;
+
+			if (!newtags[nt]) {
+				newtags[nt] = 1;
+				newtags_list[nnewtags++] = nt;
+				merge[nt] = ot;
+			} else if (!pairs[nt "." ot])
+				merge[nt] = merge[nt] " " ot;
+			else
+				continue;
+			pairs[nt "." ot] = 1;
+		}
+		close(old_file);
+		close(new_file);
+	}
+
+	END {
+		for (nt in newtags) {
+			n = split(merge[nt], a);
+			file = nt ".merge";
+			for (i = 1; i <= n; i++)
+				print a[i] >> file;
+			close(file);
+		}
+	}' < /dev/null
+done

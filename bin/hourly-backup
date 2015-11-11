@@ -1,0 +1,7 @@
+#!/bin/sh
+progname=`basename $0`
+path=`echo $0 | sed 's:/'"$progname"'$::'`
+logger $0 starting
+cp -auf /var/www /backup/
+cp -auf /var/lib/mysql /backup/
+logger $0 done status=$?

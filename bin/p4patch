@@ -1,0 +1,168 @@
+#!/bin/bash
+#
+# p4patch - Print perforce commands to integrate changes from a git patch
+#
+# Usage: p4patch [-nxR] [-p count] patchfile
+# Options;
+#   -n: do nothing, only print commands to standard output
+#   -x: show commands while executing them
+#   -R: apply reverse patch
+#
+# Copyright (c) 2006, Benny Halevy, Panasas Inc. <bhalevy at panasas.com>
+#
+usage() {
+	echo "Usage: $0 [-nxR] [-p count] patchfile" 1>&2
+	exit 1
+}
+
+pflag=1
+nflag=""
+xflag=""
+Rflag=""
+while [[ "$1" = -* ]]; do
+	case "$1" in
+	-n)
+		nflag=1;;
+	-x)
+		xflag=1;;
+	-R)
+		Rflag=1;;
+	-p)
+		pflag=$2
+		shift;;
+	*)
+		usage
+	esac
+	shift
+done
+
+if [ "$1" = "" ]; then
+	usage
+fi
+
+if [ "$nflag" != "" ]; then
+	execcmd=cat
+else
+	execcmd=sh
+	if [ "$xflag" != "" ]; then
+		execcmd="$execcmd -x"
+	fi
+fi
+
+awk -v p=$pflag -v Rflag="$Rflag" '
+function strip(s, p) {
+	for (i = 0; i < p; i++) {
+		idx = match(s, "/");
+		s = substr(s, idx+1);
+		idx = match(s, /[^/]/);
+		if (!idx) {
+			return "";
+		} else if (idx > 1) {
+			s = substr(s, idx);
+		}
+	}
+
+	return s;
+}
+
+BEGIN {
+	p += 0;
+}
+
+/^--- / {
+	from = $2;
+	if ($3 == "1970-01-01" || $3 == "1969-12-31") {
+	    # diff -N syntax
+		action = "add";
+	} else 	if ($3 == "(revision" && $4 == "0)") {
+	    # svn diff syntax
+		action = "add";
+	}
+	next;
+}
+
+/^\+\+\+ / {
+	to = $2;
+	if ($3 == "1970-01-01" || $3 == "1969-12-31") {
+		# diff -N syntax
+		action = "del";
+	}
+	gothdr = 1;
+	next;
+}
+
+gothdr && /^@@ -0,0/ {
+	if (action != "add") {
+		printf("# bogus from=%s, assuming new file\n", from) > "/dev/stderr";
+	}
+	action = "add";
+	next;
+}
+
+gothdr && /+0,0 @@$/ {
+	if (action != "del") {
+		printf("# bogus to=%s, assuming deleted file\n", to) > "/dev/stderr";
+	}
+	action = "del";
+	next;
+}
+
+gothdr {
+	if (action == "add") {
+		addfiles[nadds++] = strip(to, p);
+	} else if (action == "del") {
+		delfiles[ndels++] = strip(from, p);
+	} else {
+		# sanity check only
+		if (from !~ /^\/tmp/ && strip(from, p) != strip(to, p)) {
+			printf("# from=%s to=%s\n", from, to) > "/dev/stderr";
+		}
+		editfiles[nedits++] = strip(to, p);
+	}
+	gothdr = 0;
+	action = "";
+}
+
+FILENAME != lastfile {
+	if (files != "") {
+		files = files " ";
+	}
+	files = files FILENAME;
+	lastfile = FILENAME;
+	nfiles++;
+}
+
+END {
+	if (nedits > 0) {
+		print "xargs p4 edit <<EOF";
+		for (i = 0; i < nedits; i++) {
+			print editfiles[i];
+		}
+		print "EOF";
+	}
+	if (Rflag) {
+		Ropt = "-R ";
+	} else {
+		Ropt = "";
+	}
+	if (nfiles == 1) {
+		printf("patch %s-p%d < %s\n", Ropt, p, files);
+	} else {
+		printf("cat %s | patch %s-p%d\n", files, Ropt, p);
+	}
+	if (nadds > 0) {
+		print "xargs p4 add <<EOF";
+		for (i = 0; i < nadds; i++) {
+			print addfiles[i];
+		}
+		print "EOF";
+	}
+	if (ndels > 0) {
+		print "xargs p4 delete <<EOF";
+		for (i = 0; i < ndels; i++) {
+			print delfiles[i];
+		}
+		print "EOF";
+	}
+}
+' $* | $execcmd

@@ -1,0 +1,15 @@
+#!/bin/sh
+#cd ~/p4.local/local/iscsi-dev/linux (or the kernel dir to install from)
+#../mkkum (or if its in the path)
+
+ROOT_FS=/usr0/var/local/um/Fedora10-AMD64-root_fs
+# ROOT_FS=/usr0/var/local/um/Fedora7-AMD64-root_fs
+# ROOT_FS=/usr0/var/local/um/FedoraCore5-AMD64-root_fs
+FS_LOCAL_MOUNT=/usr0/var/local/um/target_rootfs
+
+if [ -n "$1" ]; then ROOT_FS=$1; fi
+if [ -n "$2" ]; then FS_LOCAL_MOUNT=$2; fi
+
+mount -o loop $ROOT_FS $FS_LOCAL_MOUNT \
+	&& make ARCH=um KBUILD_OUTPUT=.build_um INSTALL_MOD_PATH=$FS_LOCAL_MOUNT modules_install
+umount $FS_LOCAL_MOUNT

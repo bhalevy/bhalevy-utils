@@ -1,0 +1,7 @@
+#!/bin/sh
+progname=`basename $0`
+path=`echo $0 | sed 's:/'"$progname"'$::'`
+logger $0 starting
+$path/backup-home | logger
+$path/p4checkpoint -u bhalevy -P p4passwd | logger
+logger $0 done status=$?

@@ -1,0 +1,55 @@
+#!/bin/sh
+
+vflag=0
+progname=`basename $0`
+tmpfile=/tmp/${progname}.$$.out
+cmd=./scripts/checkpatch.pl
+
+usage ()
+{
+	echo "Usage: $progname [-v] [-c cmd] [dir|file] ..." 1>&2
+	exit 1
+}
+
+while getopts ":vc:" opt; do
+case $opt in
+	v)
+		vflag=1;;
+	c)
+		cmd=$OPTARG;;
+	*)
+		usage;;
+	esac
+done
+shift $((OPTIND-1))
+
+if [ $# = 0 ]; then
+	usage;
+fi
+
+declare -a files
+n=0
+for i; do
+	if [ -d "$i" ]; then
+		for j in "$i"/*.patch; do
+			files[$n]="$j"
+			n=$(($n+1))
+		done
+	else
+		files[$n]="$i"
+		n=$(($n+1))
+	fi
+done
+
+for i in `seq 0 $(($n-1))`; do
+	f=${files[$i]}
+	if [ $vflag != 0 ]; then
+		echo $cmd "\"$f\""
+	fi
+	if ! $cmd "$f" > $tmpfile 2>&1; then
+		echo "===" $f:
+		cat $tmpfile
+		echo
+	fi
+	rm -f $tmpfile
+done

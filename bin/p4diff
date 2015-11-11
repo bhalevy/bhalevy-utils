@@ -1,0 +1,50 @@
+#!/bin/bash
+#
+# p4diff - Generate a perforce diff suitable for patch(1)
+#
+# Usage: p4diff [-U num] ...
+#
+# Copyright (c) 2006, Benny Halevy, Panasas Inc. <bhalevy at panasas.com>
+#
+magicopt=4
+
+if [[ "$1" = -$magicopt* ]]; then
+	inflags=$1
+	shift
+	inargs="`echo $inflags | sed "s/-$magicopt/-/"` $*"
+	lflag=0
+	tmpflag=0
+	args=""
+	for i in $inargs; do
+		if [[ "$i" = -L* ]]; then
+			lflag=1;
+		fi
+		if [[ "$i" = /tmp/* ]]; then
+			tmpflag=1;
+		fi
+		lastarg="$i"
+		if [[ `echo $i | wc -w` != 1 ]]; then
+			args="$args '$i'"
+		else
+			args="$args $i"
+		fi
+	done
+	if [ $tmpflag = 1 ] && [ $lflag = 0 ]; then
+		fname=`echo $lastarg | sed "s:$PWD/:/:"`
+		args="$args -L a$fname -L b$fname"
+	fi
+
+	echo diff $args
+	eval diff $args
+	exit
+fi
+
+export P4DIFF="$0"
+flags=Np
+if [ "$1" = -U ]; then
+	flags=$flags"U"$2
+	shift 2
+else
+	flags=$flags"u"
+fi
+exec p4 diff -d$magicopt$flags $*

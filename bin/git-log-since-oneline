@@ -1,0 +1,64 @@
+#!/bin/sh
+
+awk -v s="$1" 'BEGIN {
+	if (s != "") {
+		#  YYYY MM DD HH MM SS[ DST].
+		since = mktime(s);
+		if (since < 0) {
+			print ARGV[0] ": Invalid date \"" s "\"" > "/dev/stderr"
+			print "date format: YYYY MM DD HH MM SS[ DST]" > "/dev/stderr"
+			exit(1);
+		}
+	}
+	month["Jan"] = 1;
+	month["Feb"] = 2;
+	month["Mar"] = 3;
+	month["Apr"] = 4;
+	month["May"] = 5;
+	month["Jun"] = 6;
+	month["Jul"] = 7;
+	month["Aug"] = 8;
+	month["Sep"] = 9;
+	month["Oct"] = 10;
+	month["Nov"] = 11;
+	month["Dec"] = 12;
+}
+
+function filter()
+{
+	if (!since || lasttime > since) {
+		printf("  %-16s ", last_author);
+		system("git log --oneline -1 " last_commit);
+		found++;
+	}
+	lasttime = 0;
+}
+
+$1 == "commit" {
+	filter();
+	last_commit = $2;
+	next;
+}
+
+$1 == "Author:" {
+	filter();
+	s = $0;
+	sub(/^Author: /, "", s);
+	sub(/<.*$/, "", s);
+	last_author = s;
+	next;
+}
+
+$1 == "Date:" {
+	split($5, tab, ":");
+	datestr = sprintf("%d %d %d %d %d %d %s",
+			$6, month[$3], $4, tab[1], tab[2], tab[3], $7);
+	lasttime = mktime(datestr);
+	next;
+}
+
+END {
+	filter();
+	if (found)
+		printf("\n");
+}'

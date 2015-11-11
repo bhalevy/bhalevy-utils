@@ -1,0 +1,91 @@
+#!/bin/bash
+
+usage () {
+	echo "Usage: `basename $0` [-a] [-d delay] [-f from] [-i in-reply-to] [git-send-email options ...] [-t to] patch ..." 1>&2
+	exit 1
+}
+
+from=""
+to=""
+opts=""
+id=""
+auto=0
+delay=0
+while [[ "$1" == -* ]]; do
+	case "$1" in
+	(-h|--help)
+		usage;;
+	-a)
+		auto=1;;
+	(-d|--delay)
+		auto=1
+		delay="$2"; shift;;
+	-f)
+		from="$2"; shift;;
+	-t)
+		to="$to $2"; shift;;
+	-i)
+		id="$2"
+		opts="$opts --no-chain-reply-to --in-reply-to \"$id\""
+		shift;;
+	(--compose|--*signed-off-by-cc|--quiet|--smtp-ssl|--*suppress-from|--*thread|--dry-run)
+		opts="$opts $1";;
+	(--bcc|--cc|--cc-cmd|--from|--in-reply-to|--identity|--smtp-server|--smtp-server-port|--smtp-user|--smtp-pass|--smtp-encryption|--subject|--suppress-cc|--envelope-sender|--to)
+		opts="$opts $1 \"$2\""
+		shift;;
+	(--*chain-reply-to)
+		echo $0: $1: invalid option 1>&2
+		usage;;
+	*)
+		echo $0: $1: unknown option 1>&2
+		usage;;
+	esac
+	shift
+done
+
+if [ $# = 0 ]; then
+	usage
+fi
+
+if [ "$to" = "" ]; then
+	read -p "To: " to
+	if [ "$to" = "" ]; then
+		usage
+	fi
+fi
+
+for i in "$to"; do
+	opts="--to \"$i\" $opts"
+done
+if [ ! -z "$from" ]; then
+	opts="--from \"$from\" $opts"
+fi
+
+q=-1
+for i; do
+	cmd="git send-email $opts \"$i\""
+	echo $cmd
+	if [ $auto = 0 ]; then
+		read -s -n 1 -p "press any key to send (^C to abort)..."
+		echo
+	else
+		f=1
+		while true; do
+			n=`sudo mailq | awk '/Total requests: / {print $3}'`
+			if [ $n -le $q -o $q -eq -1 ]; then
+				q=$n
+				if [ "$delay" -gt 0 ]; then
+					sleep $delay
+				fi
+				break;
+			else
+				if [ $f = 0 ]; then
+					echo $0: waiting for $(($n-$q)) messages in mailq 1>&2
+				fi
+				sleep 10
+			fi
+			f=0
+		done
+	fi
+	eval $cmd
+done

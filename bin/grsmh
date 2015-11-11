@@ -1,0 +1,6 @@
+#!/bin/sh
+cmd=grsrc
+for i; do
+	cmd="$cmd \"$i\""
+done
+eval $cmd src/panfs/include/pan/sm

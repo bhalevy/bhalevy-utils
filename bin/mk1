@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if test ! $1; then
+	echo Usage: $0 name > /dev/fd/2
+fi
+
+flags="-g -Wall -Wextra"
+while [[ $1 == -* ]]; do
+  flags="$flags $1"
+  shift
+done
+
+name=$1
+shift
+
+echo gcc -o $name $flags $name.[cCS] $*
+gcc -o $name $flags $name.[cCS] $*

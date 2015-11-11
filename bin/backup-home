@@ -1,0 +1,14 @@
+#!/bin/sh
+progname=`basename $0`
+srcdir="/mnt/fs1/home"
+destdir="/mnt/fs2/backup"
+logfile="$destdir/$progname.`date +%F`"
+{
+cmd="/usr/bin/rsync -avuH $* --exclude '[Cc]ache/' --exclude '/*.old/' --exclude '/*.orig/' --exclude '/*.core/' --exclude '/core.*/' --exclude '.build*' --exclude tmp --exclude music --exclude dev $srcdir/ $destdir/" 
+echo $cmd
+time $cmd
+
+cmd="backup-p4opened"
+echo $cmd
+time $cmd
+} >> $logfile 2>&1

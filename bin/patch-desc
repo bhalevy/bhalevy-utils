@@ -1,0 +1,26 @@
+#!/bin/sh
+
+awk '
+BEGIN {
+	hdr = 1;
+}
+
+/^---$/ {
+	exit;
+}
+
+hdr {
+	if (NF == 0)
+		hdr = 0;
+	next;
+}
+
+/^(\w|-)+[Bb]y:/ {
+	next;
+}
+
+{
+	print
+}
+
+' $*

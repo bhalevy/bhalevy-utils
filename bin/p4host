@@ -1,0 +1,6 @@
+#!/bin/sh
+
+tmpfile=/tmp/`basename $0`.$USER.$$.tmp
+p4 client -o | sed -r 's#^(Host:[ 	]+).*$#\1'`hostname`'#
+	s#^(Root:[ 	]+).*$#\1'`pwd`'#' > $tmpfile && \
+p4 client -i < $tmpfile

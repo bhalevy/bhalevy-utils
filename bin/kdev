@@ -1,0 +1,12 @@
+#!/bin/sh
+
+dir=.
+if [ "$1" != "" ]; then
+	dir="$1"
+fi
+
+if test -d "$dir"; then
+	dir=`echo $dir/*.kdevelop`
+fi
+
+kdevelop $dir > /dev/null 2>&1

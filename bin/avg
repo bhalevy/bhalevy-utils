@@ -1,0 +1,23 @@
+#!/bin/sh
+
+f=""
+
+case $1 in
+-*)
+	echo "Usage: $0 field [file]" 2>&1
+	exit 2;;
+[0-9]*)
+	f=$1
+	shift;;
+esac
+
+if test -z $f; then
+	f=1
+fi
+
+awk "
+{ s += \$$f }
+
+END {
+	print s, NR, s / NR;
+}" $*

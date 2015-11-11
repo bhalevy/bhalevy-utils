@@ -1,0 +1,15 @@
+#!/bin/sh
+
+awk '
+/^(\w|-)+[Bb]y:/ {
+	s = $0;
+	if (a[s] == "") {
+		a[s] = 1;
+		keys[nkeys++] = s;
+	}
+}
+
+END {
+	for (i = 0; i < nkeys; i++)
+		print keys[i];
+}' $* | sort -u

@@ -1,0 +1,759 @@
+#!/bin/sh
+# the next line restarts using wish \
+exec /usr/pan/bin/wish8.3 "$0" "$@"
+
+#
+# Requires p4 client at 97.2 or later!
+#
+# $Id$
+
+####################################################################
+####################################################################
+## tcl/tk Merge tool                                              ##
+## Iain Huxley 1997                                               ##
+## ----------------                                               ##
+## General Notes:  All the information regarding the text changes ##
+## is stored in the text windows as special marks - no other data ##
+## structures are used.                                           ##
+####################################################################
+####################################################################
+
+####################################################################
+# Section: UI Initialization                                       #
+# --------------------------                                       #
+# Notes:  to adjust the layout, the pack statements within this    #
+#         section will need altering/reordering                    #
+####################################################################
+
+# check the command line 
+if { $argc != 4 } \
+{
+  puts stderr "Usage: mergetool <base> <theirs> <yours> <outputfile>"
+  exit
+}
+
+set outputfile [lindex $argv 3] 
+set inputlines [exec -keepnewline \
+	p4 merge3 [lindex $argv 0] [lindex $argv 1] [lindex $argv 2] ]
+
+eval destroy [winfo child .]
+wm title . "Merge Tool"
+
+# get the screen dimensions for later use
+set midx [expr [winfo vrootheight .] / 2] 
+set midy [expr [winfo vrootwidth  .] / 2] 
+
+frame .baseframe
+pack .baseframe -expand y -fill both
+
+
+# create the base text window. Add global text appearance 
+# parameters, such as font & color here
+text .base -width 2 -height 1 -wrap none \
+	-xscrollcommand ".xb set" -yscrollcommand ".yb set" 
+scrollbar .yb -orient vertical -command ".base yview"
+scrollbar .xb -orient horizontal -command ".base xview"
+pack .xb -in .baseframe -fill x -side bottom
+pack .yb -in .baseframe -fill y -side right 
+pack .base -in .baseframe -expand yes -fill both
+
+frame .sources
+pack .sources -expand yes -fill both
+frame .source1frame -background blue 
+frame .source2frame -background green
+pack .source1frame .source2frame -side left -expand yes -fill both -in .sources 
+
+# create the leg 1 text window. Add global text appearance 
+# parameters, such as font & color here
+text .source1 -width 1 -height 1 -yscrollcommand ".y1 set" \
+	-xscrollcommand ".x1 set" -wrap none -highlightbackground blue \
+	-highlightcolor blue 
+label .s1label -text "Theirs:" -background blue -foreground white
+pack .s1label -in .source1frame -fill x -side top
+scrollbar .y1 -orient vertical   -command ".source1 yview"
+scrollbar .x1 -orient horizontal -command ".source1 xview"
+pack .x1      -in .source1frame -fill x -side bottom
+pack .y1      -in .source1frame -fill y -side right
+pack .source1 -in .source1frame -expand yes -fill both
+
+# create the leg 2 text window. Add global text appearance 
+# parameters, such as font & color here
+text .source2 -width 1 -height 1 -yscrollcommand ".y2 set" \
+	-xscrollcommand ".x2 set" -wrap none -highlightbackground green \
+	-highlightcolor green 
+scrollbar .y2 -orient vertical   -command ".source2 yview"
+scrollbar .x2 -orient horizontal -command ".source2 xview"
+label .s2label -text "Yours:" -background green -foreground black
+pack .s2label -in .source2frame -fill x -side top
+pack .x2      -in .source2frame -fill x -side bottom
+pack .y2      -in .source2frame -fill y -side right 
+pack .source2 -in .source2frame -expand yes -fill both
+
+frame .resultframe 
+pack .resultframe -expand yes -fill both
+
+# create the buttons here.
+frame .buttonframe -height 5 
+pack .buttonframe -fill x
+button .takel1 -text "Take Theirs 1"  -background blue -foreground white 
+button .takel2 -text "Take Yours 2"  -background green
+button .takebase -text "Take Base"  
+button .nextchange -text "Next Change"
+button .nextconflict -text "Next Conflict"
+button .togglebase -text "Hide Base" -width 10
+button .done -text "Done" -width 10 
+pack .takel1 .takel2 .takebase .nextchange .nextconflict .togglebase .done -side left -expand yes -in .buttonframe
+
+
+# create the result text window. Add global text appearance 
+# parameters, such as font & color here
+text .result -width 2 -height 1 -wrap none \
+	-xscrollcommand ".xr set" -yscrollcommand ".yr set" 
+
+scrollbar .yr -orient vertical -command ".result yview"
+scrollbar .xr -orient horizontal -command ".result xview"
+pack .xr -in .resultframe -fill x -side bottom
+pack .yr -in .resultframe -fill y -side right 
+pack .result -in .resultframe -expand yes -fill both
+
+wm geometry . [format "=%dx%d+10+10"       \
+        [expr [winfo vrootwidth  .] - 50] \
+        [expr [winfo vrootheight .] - 60]]
+wm minsize . 400 300
+
+####################################################################
+# Section: Text Tag Initialization                                 #
+# --------------------------------                                 #
+# Notes:  This section defines the styles associated with each     #
+#         text type.  Note that the "current" version of each      #
+#         style will override the non-current version when a       #
+#         change becomes current.                                  #
+####################################################################
+
+# unchanged is applied to text that is changed in another leg
+.base    tag configure unchanged
+.source1 tag configure unchanged
+.source2 tag configure unchanged
+.result  tag configure unchanged 
+
+.base    tag configure unchanged_current -background black -foreground white
+.source1 tag configure unchanged_current -background black -foreground white
+.source2 tag configure unchanged_current -background black -foreground white
+.result  tag configure unchanged_current -background black -foreground white
+
+.base    tag configure conflict -foreground red
+.source1 tag configure conflict -foreground red
+.source2 tag configure conflict -foreground red
+.result  tag configure conflict -foreground red
+
+# unresolved conflict is the style of the automatically inserted
+# "UNRESOLVED CONFLICT" sting
+.result  tag configure unresolved_conflict -font -*-Helvetica-Bold-R-Normal--*-200-*-*-*-*-*-* -background gray60 
+
+.base    tag configure conflict_current -background red -foreground white
+.source1 tag configure conflict_current -background red -foreground white
+.source2 tag configure conflict_current -background red -foreground white
+.result  tag configure conflict_current -background red -foreground white
+
+.source1 tag configure source1 -foreground blue  
+.source2 tag configure source2 -foreground green4 
+.result  tag configure source1 -foreground blue 
+.result  tag configure source2 -foreground green4
+
+.source1 tag configure source1_current -background blue   -foreground white
+.source2 tag configure source2_current -background green4 -foreground white
+.result  tag configure source1_current -background blue   -foreground white
+.result  tag configure source2_current -background green4 -foreground white
+
+# no_text is a special tag to mark places where text has been deleted 
+.base    tag configure no_text -relief raised -borderwidth 1
+.source1 tag configure no_text -relief raised -borderwidth 1
+.source2 tag configure no_text -relief raised -borderwidth 1
+.result  tag configure no_text -relief raised -borderwidth 1
+
+####################################################################
+# Section: Main Procedures                                         #
+# ------------------------                                         #
+####################################################################
+
+# markindex is used to mark changes in the text as they are parsed
+set markindex 1 
+
+# currentindex is used to mark the change which is currently being
+# examined
+set currentindex 0 
+
+# Display a text box containing the string $message
+proc ShowMessage { message } \
+{
+  global midx midy
+  
+  if {  [winfo exists .messagewin] == 1 } {destroy .messagewin}
+
+  toplevel .messagewin  
+  wm title .messagewin "Warning"
+  frame .messagewin.frame -width 200 -height 120
+  message .messagewin.msg -bd 2 -text $message -width 200  
+  button .messagewin.ok -text OK -command { destroy .messagewin; return 0}
+  pack .messagewin.msg .messagewin.ok -side top -in .messagewin.frame  
+  pack .messagewin.frame -fill both -expand yes
+  wm geometry .messagewin [format "=200x80+%d+%d" $midx [expr $midy-100]]
+  # why doesn't the following grab work? 
+  #grab -global .messagewin 
+}
+
+
+# During parsing, this procedure inserts a mark into the appropriate
+# text window which is used to index the changes. 
+proc InsertMark { newstate } \
+{
+  global markindex w 
+
+  proc putmark { text } \
+  {
+    global markindex w
+    $text mark set $markindex current
+    $text mark gravity $markindex left
+  }
+
+  switch $newstate \
+  {
+    "BASE" { 
+           putmark .base
+         }
+
+    "BASE L1" { 
+           putmark .base
+           putmark .source1
+         }
+
+    "BASE L2" {
+           putmark .base
+           putmark .source2
+         }
+
+    "BASE CONFLICT" { 
+           putmark .base 
+         }
+
+    "L1" {
+           putmark .source1
+           putmark .result
+           incr markindex
+         }
+
+    "L2" { 
+           putmark .source2
+           putmark .result
+           incr markindex
+         }
+
+    "L1 L2" { 
+           putmark .source1
+           putmark .source2
+           putmark .result
+           incr markindex
+         } 
+
+    "L1 CONFLICT" {
+           putmark .source1 
+           putmark .result 
+           .result insert end "UNRESOLVED CONFLICT\n" [list conflict unresolved_conflict]       
+         }
+
+    "L2 CONFLICT" { 
+           putmark .source2 
+           incr markindex 
+         }
+  }
+}
+
+# During parsing, inserts a line of text into the appropriate text windows
+# using the appropriate tag
+proc InsertText { state line { notext false } } \
+{
+  proc puttext { text line notext { type "none" } } \
+  {
+    set type $type
+    if { $notext } \
+    {
+       if { $type == "none" } \
+       { 
+	 set type "no_text" 
+       } else \
+       {
+         set type [list "no_text" $type]
+       }
+    }
+    if { $type == "none" } \
+    {
+      $text insert end $line 
+      $text insert end "\n"
+    } else \
+    {
+      $text insert end $line $type
+      $text insert end "\n"  $type
+    }
+  }
+
+  global .
+    switch $state \
+    {
+      "ALL" { 
+             puttext .base    $line $notext
+             puttext .source1 $line $notext
+             puttext .source2 $line $notext
+             puttext .result  $line $notext
+           }
+
+      "BASE" { 
+             puttext .base    $line $notext unchanged
+           }
+
+      "BASE L1" {
+             puttext .base    $line $notext unchanged
+             puttext .source1 $line $notext unchanged
+           }
+
+      "BASE L2" { 
+             puttext .base    $line $notext unchanged
+             puttext .source2 $line $notext unchanged
+           }
+
+      "BASE CONFLICT" { 
+             puttext .base    $line $notext conflict
+           }
+
+      "L1" { 
+             puttext .source1 $line $notext source1
+             puttext .result  $line $notext source1
+           }
+
+      "L2" { 
+             puttext .source2 $line $notext source2
+             puttext .result  $line $notext source2
+           }
+
+      "L1 L2" {
+             puttext .source1 $line $notext source1
+             puttext .source2 $line $notext source2
+             puttext .result  $line $notext source1
+           } 
+
+      "L1 CONFLICT" { 
+             puttext .source1 $line $notext conflict
+           }
+
+      "L2 CONFLICT" { 
+             puttext .source2 $line $notext conflict
+           }
+    }
+}
+
+# Parses a merged file, inserting tagged text and marks into the 
+# appropriate text windows.   The state indicates the type of
+# text (e.g. conflict, l1 change etc) that is currently being read
+
+proc ParseFile { lineList } \
+{ 
+  global markindex
+  set state "ALL"
+  set inserted 1
+
+  foreach line [ split $lineList "\n" ] \
+  {
+    if { [string compare [string range $line 0 4] ">>>> "] == 0 } \
+    {
+      set newstate [string range $line 5 end]
+      if { !$inserted } \
+      {
+        # if no text was inserted for a given state, insert a blank line 
+        InsertText $state "" true
+      }
+      set inserted 0
+      InsertMark $newstate     
+      set state $newstate
+      continue
+    }
+
+    InsertText $state $line 
+    set inserted 1 
+  }
+}
+
+# determines if mark "mark" is before tag "tag" in text "text"
+proc MarkIsBeforeTag { text mark tag } \
+{
+  set index [$text tag nextrange $tag $mark]
+  if { $index == "" } \
+  {
+    return 0
+  } 
+  return [expr [$text index [lindex $index 0 ]] \
+         ==  [$text index $mark]] 
+}
+
+# increments the current change marker, looping to the start
+# if necessary
+proc IncrCurrent {} \
+{
+  global currentindex markindex w
+  
+  incr currentindex
+  if { $currentindex >= $markindex } \
+  {
+    set currentindex 1 
+    ShowMessage "Looping to start of file"
+  }
+}
+
+# decrements the current change marker, looping to the end 
+# if necessary
+proc DecrCurrent {} \
+{
+  global currentindex markindex w
+  
+  incr currentindex -1
+  if { $currentindex < 1 } \
+  {
+    set currentindex [ expr $markindex - 1 ]  
+    ShowMessage "Looping to end of file"
+  }
+}
+
+# removes all instances in all text windows of a given tag
+proc RemoveTags { tag } \
+{
+  global .
+
+  # fetch the tag ranges for each text window
+  set baseindex1    [lindex [.base    tag ranges $tag] 0]
+  set baseindex2    [lindex [.base    tag ranges $tag] 1]
+  set source1index1 [lindex [.source1 tag ranges $tag] 0]
+  set source1index2 [lindex [.source1 tag ranges $tag] 1]
+  set source2index1 [lindex [.source2 tag ranges $tag] 0]
+  set source2index2 [lindex [.source2 tag ranges $tag] 1]
+  set resultindex1  [lindex [.result  tag ranges $tag] 0]
+  set resultindex2  [lindex [.result  tag ranges $tag] 1]
+
+  # if a range existed, remove the tag
+  if {$baseindex1    != ""} {.base    tag remove $tag $baseindex1    $baseindex2 }
+  if {$source1index1 != ""} {.source1 tag remove $tag $source1index1 $source1index2 }
+  if {$source2index1 != ""} {.source2 tag remove $tag $source2index1 $source2index2 }
+  if {$resultindex1  != ""} {.result  tag remove $tag $resultindex1  $resultindex2 }
+} 
+
+# retrieves our mark index to a change from an x,y coordinate
+proc GetChangeIndexFromXY { text x y } \
+{
+  set textindex [$text index [format "@%d,%d" $x $y]]
+  set mark [$text mark prev $textindex]
+  if { $mark == "insert" } \
+  {
+    set mark [$text mark prev [$text index $mark] ]
+  }
+  return $mark
+}
+
+proc MakeXYCurrent { text x y } \
+{
+  global currentindex markindex 
+  set newindex [ GetChangeIndexFromXY $text $x $y ]
+  if { $newindex != "" } \
+  {
+    set currentindex $newindex
+    MakeCurrent $currentindex
+  }
+}
+
+# makes an index current - this entails tagging it with the _current version
+# of it's tag, and positioning it in the view
+proc MakeCurrent { index } \
+{
+  global .
+
+  # Remove the current tags for the previous current change
+  RemoveTags unchanged_current
+  RemoveTags source1_current
+  RemoveTags source2_current 
+  RemoveTags conflict_current 
+
+  set ib [ .base    index $index ]
+  set i1 [ .source1 index $index ]
+  set i2 [ .source2 index $index ]
+  set ir [ .result  index $index ]
+
+  # retag the base change and reposition the view
+  set currenttag [lindex [.base tag names $ib ] 0 ]
+  set tagtoadd [format "%s%s" $currenttag "_current"]
+  set tagpair [ .base tag nextrange $currenttag $ib ]
+  .base    tag add $tagtoadd [ lindex $tagpair 0 ] [ lindex $tagpair 1] 
+  .base yview [list $ib - 2 lines]
+
+  # retag the leg 1 change and reposition the view
+  set currenttag [lindex [.source1 tag names $i1 ] 0 ]
+  set tagtoadd [format "%s%s" $currenttag "_current"]
+  set tagpair [ .source1 tag nextrange $currenttag $i1 ]
+  .source1 tag add $tagtoadd [ lindex $tagpair 0 ] [ lindex $tagpair 1] 
+  .source1 yview [list $i1 - 2 lines]
+
+  # retag the leg 2 change and reposition the view
+  set currenttag [lindex [.source2 tag names $i2 ] 0 ]
+  set tagtoadd [format "%s%s" $currenttag "_current"]
+  set tagpair [ .source2 tag nextrange $currenttag $i2 ]
+  .source2 tag add $tagtoadd [ lindex $tagpair 0 ] [ lindex $tagpair 1] 
+  .source2 yview [list $i2 - 2 lines]
+  
+  # retag the result change and reposition the view
+  set currenttag [lindex [.result tag names $ir ] 0 ]
+  # check that the text was not deleted by the user..
+  if {$currenttag == ""} \
+  { 
+    ShowMessage "The area of result text is missing for this change"
+    return
+  } 
+  set tagtoadd [format "%s%s" $currenttag "_current"]
+  set tagpair [ .result tag nextrange $currenttag $ir ]
+  .result  tag add $tagtoadd [ lindex $tagpair 0 ] [ lindex $tagpair 1] 
+  .result yview [list $ir - 2 lines]
+}
+
+# go to the next change of any type
+proc NextChange {} \
+{
+  global currentindex 
+  
+  IncrCurrent 
+  MakeCurrent $currentindex 
+}
+
+# go to the previous change of any type
+proc PrevChange {} \
+{
+  global currentindex 
+  
+  DecrCurrent 
+  MakeCurrent $currentindex 
+}
+
+# go to the next conflict change
+proc NextConflict {} \
+{
+  global currentindex
+  
+  IncrCurrent 
+  while { [MarkIsBeforeTag .base $currentindex conflict] == 0 } \
+  {
+    IncrCurrent 
+  } 
+  MakeCurrent $currentindex 
+}
+
+# go to the previous conflict change
+proc PrevConflict {} \
+{
+  global currentindex
+  
+  DecrCurrent 
+  while { [MarkIsBeforeTag .base $currentindex conflict] == 0 } \
+  {
+    DecrCurrent 
+  } 
+  MakeCurrent $currentindex 
+}
+
+# indicates if the base text window is visible
+set basevisible 1
+
+# toggle viewing of the base text window
+proc ToggleBase {} \
+{
+  global .
+  global basevisible
+  if {$basevisible} \
+  {
+    pack forget .baseframe
+    set basevisible 0
+    .togglebase configure -text "Show Base"
+  } else \
+  {
+    pack .baseframe -expand yes -fill both -before .sources
+    set basevisible 1
+    .togglebase configure -text "Hide Base"
+  } 
+} 
+
+# substitutes the current change text in result with the current
+# change text in leg 1
+proc TakeL1 {} \
+{
+  global currentindex
+  if { $currentindex < 1 } {
+    ShowMessage "You have to select something first" 
+    return
+  }
+
+  set i1 [ .source1 index $currentindex ]
+  set source1tag [lindex [.source1 tag names $i1 ] 0 ]
+  set notexttag [lindex [.source1 tag names $i1 ] 2 ]
+  set tagpair [ .source1 tag nextrange $source1tag $i1 ]
+  set lefttext [.source1 get [ lindex $tagpair 0 ] [ lindex $tagpair 1] ]
+  
+  set ir [ .result  index $currentindex ]
+  set resulttag [lindex [.result tag names $ir ] 0 ]
+  set tagpair [ .result tag nextrange $resulttag $ir ]
+  .result delete [ lindex $tagpair 0 ] [ lindex $tagpair 1] 
+
+  # make sure the no_text tag is also copied
+  if { $notexttag == "" } \
+  {
+    .result insert $currentindex $lefttext [list $source1tag [format "%s%s" $source1tag "_current"]]
+  } else \
+  {
+    .result insert $currentindex $lefttext [list $source1tag [format "%s%s" $source1tag "_current"] $notexttag]
+  }
+}
+
+# substitutes the current change text in result with the current
+# change text in leg 2 
+proc TakeL2 {} \
+{
+  global currentindex
+  if { $currentindex < 1 } {
+    ShowMessage "You have to select something first"
+    return 
+  }
+
+  set i2 [ .source2 index $currentindex ]
+  set source2tag [lindex [.source2 tag names $i2 ] 0 ]
+  set notexttag [lindex [.source2 tag names $i2 ] 2 ]
+  set tagpair [ .source2 tag nextrange $source2tag $i2 ]
+  set lefttext [.source2 get [ lindex $tagpair 0 ] [ lindex $tagpair 1] ]
+
+  set ir [ .result  index $currentindex ]
+  set resulttag [lindex [.result tag names $ir ] 0 ]
+  set tagpair [ .result tag nextrange $resulttag $ir ]
+  .result delete [ lindex $tagpair 0 ] [ lindex $tagpair 1] 
+  
+  # make sure the no_text tag is also copied
+  if { $notexttag == "" } \
+  {
+    .result insert $currentindex $lefttext [list $source2tag [format "%s%s" $source2tag "_current"]]
+  } else \
+  {
+    .result insert $currentindex $lefttext [list $source2tag [format "%s%s" $source2tag "_current"] $notexttag]
+  }
+}
+
+# substitutes the current change text in result with the current
+# change text in base 
+proc TakeBase {} \
+{
+  global currentindex
+  if { $currentindex < 1 } {
+    ShowMessage "You have to select something first"
+    return 
+  }
+
+  set i2 [ .base index $currentindex ]
+  set source2tag [lindex [.base tag names $i2 ] 0 ]
+  set notexttag [lindex [.base tag names $i2 ] 2 ]
+  set tagpair [ .base tag nextrange $source2tag $i2 ]
+  set lefttext [.base get [ lindex $tagpair 0 ] [ lindex $tagpair 1] ]
+
+  set ir [ .result  index $currentindex ]
+  set resulttag [lindex [.result tag names $ir ] 0 ]
+  set tagpair [ .result tag nextrange $resulttag $ir ]
+  .result delete [ lindex $tagpair 0 ] [ lindex $tagpair 1] 
+  
+  # make sure the no_text tag is also copied
+  if { $notexttag == "" } \
+  {
+    .result insert $currentindex $lefttext [list $source2tag [format "%s%s" $source2tag "_current"]]
+  } else \
+  {
+    .result insert $currentindex $lefttext [list $source2tag [format "%s%s" $source2tag "_current"] $notexttag]
+  }
+}
+
+# write the result (without no_text lines)
+proc SaveResult { file }  \
+{
+    set f [open $file w]
+    set lineindex 0
+    set endindex [expr int([.result index end]) - 2]
+
+    while { $lineindex != $endindex  } \
+    {
+      set current [.result index [list 0.0 + $lineindex lines]]
+      set currenttag [lindex [.result tag names $current ] 1 ]
+      if { $currenttag != "no_text" } \
+      {
+         puts -nonewline $f [.result get $current [.result index [list $current + 1 lines]]]
+      }
+      incr lineindex
+    }
+    flush $f
+}
+
+# Display a quit box which will save the text if yes is selected
+proc ShowQuitBox { } \
+{
+  global midx midy outputfile
+  
+  toplevel .quitbox  
+  wm title .quitbox "Quit"
+  wm geometry .quitbox [format "=+%d+%d" $midx [expr $midy-100]]
+  frame .quitbox.frame 
+    # -width 200 -height 120
+  message .quitbox.msg -bd 2 -text \
+      [format "Save changes in file '%s'?" $outputfile] -width 500  
+  button .quitbox.yes -text Yes -command \
+  { 
+    global outputfile
+
+    destroy .quitbox;     
+    
+    # first check for unresolved conflicts
+    if { [.result tag ranges unresolved_conflict] != "" } \
+    {
+      ShowMessage "Error: unresolved conflicts remain"
+      return
+    } 
+   
+    SaveResult $outputfile
+    exit
+  }
+  button .quitbox.no -text No -command { destroy .quitbox; exit}
+  button .quitbox.cancel -text Cancel -command { destroy .quitbox; return}
+  pack .quitbox.msg  -side top -in .quitbox.frame  
+  pack .quitbox.yes .quitbox.no .quitbox.cancel -side left -in .quitbox.frame -fill x -expand yes
+  pack .quitbox.frame -fill both -expand yes
+  # why doesn't the following grab work? 
+  #grab -global .quitbox 
+}
+
+# set up UI bindings
+# link the buttons to the appropriate procedures
+.togglebase   configure -command "ToggleBase"
+.nextchange   configure -command "NextChange"
+.nextconflict configure -command "NextConflict"
+.takel1       configure -command "TakeL1"
+.takel2       configure -command "TakeL2"
+.takebase     configure -command "TakeBase"
+.done         configure -command "ShowQuitBox"
+# bind the text windows so you can click to choose the current
+# change
+bind          .base    <Double-ButtonRelease-1> { MakeXYCurrent .base    %x %y}
+bind          .source1 <Double-ButtonRelease-1> { MakeXYCurrent .source1 %x %y}
+bind          .source2 <Double-ButtonRelease-1> { MakeXYCurrent .source2 %x %y}
+bind          .result  <Double-ButtonRelease-1> { MakeXYCurrent .result  %x %y}
+
+# parse the merge file
+ParseFile $inputlines
+  
+# disable editing of all the text fields except result 
+.base    configure -state disabled
+.source1 configure -state disabled
+.source2 configure -state disabled 
+

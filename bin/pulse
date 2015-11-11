@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ $# != 3 ]; then
+	echo "Usage: `basename $0` average p1 r1" 1>&2
+	exit 1
+fi
+awk -v avg=$1 -v p1=$2 -v r1=$3 'BEGIN {
+	printf("%.0f\n", (avg - p1 * r1) / (1 - r1));
+}'
+

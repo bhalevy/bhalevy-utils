@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# p4mkpatch - Reformat perforce diff for patch(1)
+#
+# Syntax: p4mkpatch [-p num] [file ...]
+#
+# Copyright (c) 2006, Benny Halevy, Panasas Inc. <bhalevy at panasas.com>
+#
+p=0
+if [ "$1" = "-p" ]; then
+	p=$2
+	shift 2
+fi
+
+awk -v p=$p '
+/^====/ {
+	print;
+	f = $2;
+	if (!p) {
+		pat = "^.*src/";
+		rep = "src/";
+	} else {
+		pat = "^//depot";
+		for (i = 0; i < p; i++)
+			pat = pat "[^/]*/"
+		rep = "";
+	}
+	sub(pat, rep, f);
+	sub(/#.*$/, "", f);
+	print "--- a/" f;
+	print "+++ b/" f;
+	next;
+}
+
+{
+	print;
+}' $*

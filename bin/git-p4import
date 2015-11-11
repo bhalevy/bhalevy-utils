@@ -1,0 +1,55 @@
+#!/bin/bash
+#
+# Usage git-p4import
+#
+# Import the current perforce branch
+# Initializes a git repository
+# and imports all the changes in the current branch
+#
+
+progname=$(basename $0)
+t=/tmp/"$progname.$$"
+mkdir $t || exit 1
+
+s=$(p4 opened 2>&1 >/dev/null)
+if [ "$s" != "File(s) not opened on this client." ]; then
+	echo "There may be opened files on this client, aborting." 1>&2
+	p4 opened 1>&2
+	exit 1
+fi
+
+p4 sync @0 || exit 1
+git init || exit 1
+touch .dummy || exit 1
+git add .dummy
+git commit -s -m "dummy commit"
+if [ "$P4CONFIG" != "" ]; then
+	git add "$P4CONFIG"
+	{ echo Perforce configuration; echo; export | grep P4; } | git commit -s --file /dev/fd/0
+fi
+git add --all
+git commit -s -m "untracked files"
+changes=$(p4 changes ... | awk '{a[n++]=$2} END {while (--n >= 0) print a[n]}')
+for c in $changes; do
+	p4 sync @$c || exit 1
+	p4 describe -s $c > $t/$c.p4desc
+	awk -v progname=$progname '
+		NR == 1 {desc=$0; next}
+		NR == 2 {next}
+		{ sub(/^[ \t]+/, "") }
+		NR == 3 {print; print ""; next}
+		/^Affected files/ {
+			print desc
+			print "Imported-by: " progname
+			print "Imported-date: " strftime()
+			exit
+		}
+		{print}' $t/$c.p4desc > $t/$c.gitdesc
+	git add --all
+	git commit -s --file $t/$c.gitdesc
+done
+
+# fix Perforce's permissions
+git ls-files | xargs chmod 644
+
+rm -rf $t

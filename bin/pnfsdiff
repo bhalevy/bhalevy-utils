@@ -1,0 +1,7 @@
+#!/bin/sh
+
+signoff
+echo
+for i in fs/nfs{,d} include/linux; do
+	diff -d -N -urp -X exclude.txt $* [ab]/$i | egrep -v "^(Only|Binary)"
+done

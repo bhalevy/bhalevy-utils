@@ -1,0 +1,156 @@
+#!/bin/sh
+#
+# Usage: fixpatch [infile [outfile]]
+#
+# Copyright (c) 2007-2008 Benny Halevy <bhalevy@panasas.com>
+#
+src="$1"
+dest="$2"
+tmp=/tmp/`basename $0`.tmp.$$
+
+if [ ! -z "$src" ]; then
+	if [ ! -f "$src" ]; then
+		if [ "$src" != -h -a "$src" != --help ]; then
+			echo "`basename $0`: $src not found" 1>&2
+		fi
+		echo "Usage: `basename $0` [infile [outfile]]" 1>&2
+		exit 1
+	fi
+
+	if [ -z "$dest" ]; then
+		dest="$src"
+	fi
+
+	if [ "$src" == "$dest" ]; then
+		cp "$src" "$src.orig" || exit 1
+	fi
+fi
+
+cmd='
+function dump_hunk()
+{
+	if (!hunk) {
+		return;
+	}
+
+	if (!hsrc_line)
+		foffset = 1;
+
+	printf("@@ -%d,%d +%d,%d %s\n", -hsrc_line, hsrc_count,
+		-hsrc_line + foffset, hdest_count, hsuffix);
+
+	if (hunchanged + hdel + hadd != hlines) {
+		fflush();
+		printf("%s %d: Warning: Unchanged %d deleted %d added %d != lines %d\n",
+			FILENAME, FNR, hunchanged, hdel, hadd, hlines) > "/dev/stderr";
+	}
+
+	if (hunchanged + hdel != hsrc_count) {
+		fflush();
+		printf("%s %d: Warning: Unchanged %d deleted %d != hsrc_count %d\n",
+			FILENAME, FNR, hunchanged, hdel, hsrc_count) > "/dev/stderr";
+	}
+
+	if (hunchanged + hadd != hdest_count) {
+		fflush();
+		printf("%s %d: Warning: Unchanged %d added %d != hdest_count %d\n",
+			FILENAME, FNR, hunchanged, hadd, hdest_count) > "/dev/stderr";
+	}
+
+	for (i = 0; i < hlines; i++) {
+		print hline[i];
+		delete hline[i];
+	}
+
+	foffset += hdest_count - hsrc_count;
+	hsrc_line = 0;
+	hsrc_count = 0;
+	hdest_line = 0;
+	hdest_count = 0;
+	hsuffix = "";
+
+	hunchanged = hadd = hdel = 0;
+	hlines = 0;
+	hunk = 0;
+}
+
+/^(diff|====)/ {
+	dump_hunk();
+	print;
+	foffset = 0;
+	next;
+}
+
+/^@@/ {
+	dump_hunk();
+	n = split($2, a, /,/);
+	hsrc_line = a[1]+0;
+	hsrc_oldcount = a[2]+0;
+	hsrc_count = 0;
+	if (n != 2 || hsrc_line > 0 || hsrc_oldcount < 0) {
+		fflush();
+		printf("%s %d: Error: Corrupt hunk header (n %d hsrc_line %d hsrc_oldcount %d)\n",
+			FILENAME, FNR, n, hsrc_line, hsrc_count) > "/dev/stderr";
+	}
+
+	n = split($3, a, /,/);
+	hdest_line = a[1]+0;
+	hdest_oldcount = a[2]+0;
+	hdest_count = 0;
+	if (n != 2 || hdest_line < 0 || hdest_oldcount < 0) {
+		fflush();
+		printf("%s %d: Error: Corrupt hunk header (hdest_line %d hdest_oldcount %d)\n",
+			FILENAME, FNR, hdest_line, hdest_oldcount) > "/dev/stderr";
+	}
+
+	hsuffix = $0;
+	sub(/^@@.*@@/, "@@", hsuffix);
+
+	hlines = 0;
+	hunk = 1;
+	next;
+}
+
+(!hunk) || /^#/ {
+	print;
+	next;
+}
+
+/^-/ {
+	hdel++;
+	hsrc_count++;
+}
+
+/^+/ {
+	hadd++;
+	hdest_count++;
+}
+
+/^ / {
+	hunchanged++;
+	hsrc_count++;
+	hdest_count++;
+}
+
+/^$/ || /^[^-+ ]/ {
+	fflush();
+	printf("%s %d: Warning: badly formatted line\n",
+		FILENAME, FNR) > "/dev/stderr";
+	exit(255);
+}
+
+{
+	hline[hlines++] = $0;
+}
+
+END {
+	dump_hunk()
+}
+'
+
+if [ -z "$src" ]; then
+	awk "$cmd"
+else
+	awk "$cmd" "$src" > "$tmp" && mv "$tmp" "$dest"
+fi
+

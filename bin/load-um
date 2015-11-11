@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# how to load> ./.build_um/vmlinux ubd0=/usr0/var/local/um/Fedora7-AMD64-root_fs eth0=tuntap,,,192.168.0.117
+# in gdb do> handle SIGUSR1 pass nostop noprint
+#
+#
+# ROOT_FS=/usr0/var/local/um/Fedora10-AMD64-root_fs
+ROOT_FS=/usr0/var/local/um/Fedora12-AMD64-root_fs
+#LOCALHOST_TUN_IP=192.168.0.121
+LOCALHOST_TUN_IP=10.41.21.8
+MEM=384M
+#MEM=48M
+
+if [ -n "$1" ]; then ROOT_FS=$1; fi
+if [ -n "$2" ]; then LOCALHOST_TUN_IP=$2; fi
+if [ -n "$3" ]; then MEM=$3; fi
+
+echo .build_um/vmlinux ubd0=$ROOT_FS eth0=tuntap,,,$LOCALHOST_TUN_IP mem=$MEM
+sudo .build_um/vmlinux ubd0=$ROOT_FS eth0=tuntap,,,$LOCALHOST_TUN_IP mem=$MEM

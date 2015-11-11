@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ $# != 2 ]; then
+	echo "Usage: `basename $0` branch since" 1>&2
+	exit 1
+fi
+
+b="$1"
+s="$2"
+bs=(`git-rebase-tree -p $b`)
+n=${#bs[*]}
+for i in `seq 1 $(($n-1))`; do
+	echo ${bs[$i]}:
+	git log ${bs[$(($i-1))]}..${bs[$i]} | git-log-since "$s" | git shortlog
+done

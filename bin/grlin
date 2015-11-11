@@ -1,0 +1,6 @@
+#!/bin/sh
+cmd=grsrc
+for i; do
+	cmd="$cmd \"$i\""
+done
+eval $cmd src/panfs/common/linux src/panfs/fs/client/linux/2.6 src/panfs/include/pan/linux src/panfs/include/pan/fs/client/

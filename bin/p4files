@@ -1,0 +1,7 @@
+#!/bin/sh
+
+#root=`p4 client -o | awk '/^Root:/ {print $2}'`
+#pfx=`pwd | sed "s%$root/*%%"`
+
+sed -r "s%//depot/(trunk|branch|pub|local|((bugfix|release)/[^/]*))/[^/]*/%%
+s%#.*\$%%" $*

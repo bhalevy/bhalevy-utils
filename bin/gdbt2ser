@@ -1,0 +1,7 @@
+#!/bin/sh
+#shift
+echo `date` starting $* > /tmp/gdbt2ser.log
+#ssh bh-testlin2 sudo gdb -x ~bhalevy/bin/remote_ttyS0.gdb $*
+ssh bh-testlin2 sudo $*
+echo `date` done
+

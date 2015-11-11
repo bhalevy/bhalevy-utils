@@ -1,0 +1,8 @@
+#!/bin/sh
+declare -a refs
+refs=( `git rev-list $* || exit $?` )
+n=${#refs[@]}
+while [ $n -gt 0 ]; do
+	n=$(($n-1))
+	echo ${refs[$n]}
+done

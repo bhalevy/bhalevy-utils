@@ -1,0 +1,6 @@
+#!/bin/sh
+tmp=/tmp/`basename $0`.$$
+cat $* > $tmp
+kwrite $tmp
+rm $tmp
+

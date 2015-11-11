@@ -1,0 +1,58 @@
+#!/bin/sh
+
+pname="`basename $0`"
+name="$1"
+if [ "$name" = "" ]; then
+	echo "Usage: $pname name" 1>&2
+	exit 1
+fi
+
+if [ ! -f MAINTAINERS ]; then
+	echo "$pname: MAINTAINERS file not found" 1>&2
+	exit 1
+fi
+
+awk -vpname="$pname" -vpat="$name" -vIGNORECASE=1 '
+	function getdata(s)
+	{
+		sub(/^.:[ \t]*/, "", s);
+		return s;
+	}
+
+	function putdata(s, type)
+	{
+		s = getdata(s);
+		if (count[type]++) {
+			if (count[type] == 2) {
+				print pname ": " pat " is ambiguous" > "/dev/stderr"
+				print type ": " data[type] > "/dev/stderr"
+			}
+			print type ": " s > "/dev/stderr"
+			return -1;
+		}
+		data[type] = s;
+		return 0;
+	}
+
+	function validate(type)
+	{
+		if (count[type] != 1) {
+			if (!count[type])
+				print pname ": " type " for \"" pat "\" not found" > "/dev/stderr"
+			exit(1);
+		}
+		return data[type];
+	}
+
+	$0 ~ pat && $1 == "P:" {
+		putdata($0, "name");
+	}
+
+	$0 ~ pat && $1 == "M:" {
+		putdata($0, "email");
+	}
+
+	END {
+		printf("\"%s <%s>\"\n", validate("name"), validate("email"));
+	}
+' MAINTAINERS

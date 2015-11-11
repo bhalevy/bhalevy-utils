@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if [ $# -ne 2 ]; then
+	echo Usage: $(basename $0) search replace 1>&2
+	exit 1
+fi
+
+s="$1"
+r="$2"
+for i in fs/nfs include/linux; do
+	grsrc -l "$s" $i | xargs globalsnr "s/$s/$r/"
+done

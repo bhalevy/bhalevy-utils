@@ -1,0 +1,16 @@
+#!/bin/bash
+
+b=$1
+if [ "$b" = "" ]; then
+  b=`p4 client -o | awk '/\/depot/ {print $1; exit}'`
+fi
+
+if [[ ! "$b" = /* ]]; then
+  b=//depot/branch/$b/...
+fi
+
+if [[ ! "$b" = */... ]]; then
+  b="$b/..."
+fi
+
+exec p4 changes -m 1 -s submitted $b

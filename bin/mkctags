@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec ctags -R --c++-types=+px --excmd=pattern --exclude=Makefile --exclude='.*' -h ".h.H.hh.hpp.hxx.h++.inc.def.rpc"

@@ -1,0 +1,72 @@
+#!/bin/bash
+#
+# Usage: git-rebase-tree-branch cmd newbase upstream branch ans
+#
+# called internally from git-rebase-all
+# Note: space characters are nto allowed in any of the parameters
+#
+# Copyright (c) 2008 Benny Halevy <bhalevy@panasas.com>
+#
+
+if [ $# != 5 ]; then
+	echo $0: internal error: wrong number of parameters 1>&2
+	exit 255
+fi
+
+cmd=$1
+newbase=$2
+upstream=$3
+branch=$4
+ans=$5
+
+phelp ( ) {
+	echo "  y: Yes, do rebase (default)"
+	echo "  n: No, skip rebase"
+	echo "  a: Automatic mode"
+	echo "  e: Edit rebase command"
+	echo "  i: Interactive rebase"
+	echo "  l: List changes in base..branch"
+	echo "  q: Quit program"
+}
+
+[ "$PAGER" = "" ] && PAGER=less
+cmd="$cmd --onto $newbase $upstream $branch"
+t=`git-show-ref --hash --heads --tags "$newbase"`
+if git-log --pretty=format:%H "$newbase^..$branch" | grep -q $t; then
+	if [[ "$ans" == [Aa] ]]; then
+		ans=s
+	else
+		read -p "$branch seems to be already based at $newbase. Rebase anyway [y/N]? " ans
+		[[ "$ans" = "" || "$ans" == [Nn] ]] && ans=s
+	fi
+elif [[ "$ans" != [Aa] ]]; then
+	ans=""
+fi
+if [[ "$ans" != [SsAa] ]]; then
+	ans=""
+	while [[ "$ans" == [EeLlHh] || "$ans" = "" ]]; do
+		if [[ "$ans" == [Ee] ]]; then
+			read -e -p "edit> " cmd
+		elif [[ "$ans" == [Ll] ]]; then
+			range=`echo $cmd | awk '{ print $(NF-1) ".." $NF }'`
+			listcmd="git-log --reverse --pretty=format:\"%h %s\" $range";
+			{ echo $listcmd; echo; sh -c "$listcmd"; } | $PAGER
+		elif [[ "$ans" == [Hh] ]]; then
+			phelp;
+		fi
+		[[ "$ans" == [Aa] ]] || read -s -n 1 -p "$cmd [Y/n/a/e/i/l/q/?]: " ans; echo || exit
+		[ "$ans" = "" ] && ans=y
+		[ "$ans" = "?" ] && ans=h
+	done
+fi
+if [[ "$ans" == [AaYy] ]]; then 
+	$cmd;
+elif [[ "$ans" == [Ii] ]]; then 
+	echo $cmd | sed "s/^git-rebase /git-rebase--interactive /" | sh;
+elif [[ "$ans" == [SsNn] ]]; then
+	echo Skipped...;
+else
+	exit 255;
+fi
+# set exit code
+[[ "$ans" != [Aa] ]]
