@@ -1,7 +1,3 @@
-#!/bin/sh
+#!/bin/bash
 
-git diff $* | awk '/^diff/ {
-	s=$3;
-	sub(/^a\//, "", s);
-	print s;
-}'
+git status --short | awk '/^.[UM] / {print $2}'
