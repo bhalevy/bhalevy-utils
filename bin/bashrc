@@ -1,5 +1,5 @@
 export GIT_EDITOR=vi
-export I=/usr/src/linux-headers-3.19.0-31-generic
+export I=/usr/src/linux-headers-3.13.0-68-generic
 export S=/usr/src/linux-source-3.13.0/linux-source-3.13.0
 
 alias sush="sudo -s"

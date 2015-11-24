@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Usage: fixpatch [infile [outfile]]
 #
@@ -116,12 +116,12 @@ function dump_hunk()
 	next;
 }
 
-/^-/ {
+/^\-/ {
 	hdel++;
 	hsrc_count++;
 }
 
-/^+/ {
+/^\+/ {
 	hadd++;
 	hdest_count++;
 }
