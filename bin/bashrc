@@ -1,8 +1,10 @@
 export GIT_EDITOR=vi
-export I=/usr/src/linux-headers-3.13.0-68-generic
+export I=/usr/src/linux-headers-$(uname -r)
 export S=/usr/src/linux-source-3.13.0/linux-source-3.13.0
 
 alias sush="sudo -s"
 
 function gr { egrep --color=auto -R "$@"; }
 function nd () { mkdir -p "$1"; cd "$1"; }
+
+PATH=$PATH:~/bhalevy-utils/bin
