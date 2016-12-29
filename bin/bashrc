@@ -7,4 +7,4 @@ alias sush="sudo -s"
 function gr { egrep --color=auto -R "$@"; }
 function nd () { mkdir -p "$1"; cd "$1"; }
 
-PATH=$PATH:~/bhalevy-utils/bin
+[ -d "$HOME/bhalevy-utils/bin" ] && PATH="$PATH:$HOME/bhalevy-utils/bin"
