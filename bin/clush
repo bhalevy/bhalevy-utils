@@ -37,7 +37,12 @@ if [ $# = 0 ]; then
 	usage
 fi
 
+cmd=()
+for i in "$@"; do
+	cmd+=( "\"$i\"" )
+done
+
 for i in `eval echo $hosts`; do
-	ssh "${ssh_key_opt[@]}" "${ssh_login_opt[@]}" $i clux "$@" &
+	ssh "${ssh_key_opt[@]}" "${ssh_login_opt[@]}" $i clux "${cmd[@]}" &
 done
 wait
