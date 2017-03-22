@@ -5,23 +5,39 @@
 
 progname=`basename $0`
 
-if [[ $# = 0 || $1 = -h || $1 = --help ]]; then
-	echo "Usage: $progname [ file | -c list ] command ..." 1>&2
+function usage ()
+{
+	cat <<EOF 1>&2
+Usage: $progname [-i ssh_private_key] [-u ssh_user] -f servers_file command ...
+   or
+       $progname [-i ssh_private_key] [-u ssh_user] -c servers_list command ...
+EOF
 	exit 1
+}
+
+while getopts ":hc:f:i:u:" opt; do
+	case $opt in
+	c)	hosts="$OPTARG";;
+	f)	hosts_file="$OPTARG"
+		if [ ! -f "$hosts_file" ]; then
+			echo $progname: "$hosts_file" not found 1>&2
+			exit 1
+		fi
+		hosts=$(cat "$hosts_file");;
+
+	i)	ssh_key_opt=(-i "$OPTARG");;
+	u)	ssh_login_opt=(-l "$OPTARG");;
+
+	*)	usage;;
+	esac
+done
+
+shift $((OPTIND-1))
+if [ $# = 0 ]; then
+	usage
 fi
 
-if [ $1 = "-c" ]; then
-	hosts="$2"
-	shift
-else
-	if [ ! -f $1 ]; then
-		echo $progname: $1 not found 1>&2
-		exit 1
-	fi
-	hosts=`cat $1`
-fi
-shift
 for i in `eval echo $hosts`; do
-	ssh $i `dirname $0`/clux $* &
+	ssh "${ssh_key_opt[@]}" "${ssh_login_opt[@]}" $i clux "$@" &
 done
 wait
