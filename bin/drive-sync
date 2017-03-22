@@ -1,4 +1,6 @@
 #!/bin/bash
 
-drive pull -no-clobber "$@" && \
+set -e
+set -x
+drive pull -no-clobber "$@"
 drive push "$@"
