@@ -1,0 +1,15 @@
+#!/bin/bash
+
+params="$@"
+test -z "$params" && params=~/.ssh
+keys=()
+for i in ${params}; do
+	if [ -d "$i" ]; then
+		s="keys+=( $(file "$i"/* | awk -F: '$2 ~ /private key/ { printf("\"%s\" ", $1); }') )"
+		eval $s
+	elif ! file "$i" | grep -q 'private key$'; then
+		echo "$0: $i: not a parivate key ($(file $i))" 1>&2
+		exit 1
+	fi
+done
+ssh-add "${keys[@]}"
