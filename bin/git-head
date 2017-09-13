@@ -3,7 +3,7 @@
 # Usage: git-head [ref]
 
 if [ $# -le 1 ]; then
-	exec git-log--oneline -1 $1;
+	exec git log --oneline -1 $1;
 fi
 
 args="$@"
