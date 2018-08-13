@@ -1,11 +1,16 @@
 #!/bin/bash
 
-if test ! $1; then
+function usage ( ) {
 	echo Usage: $0 name > /dev/fd/2
+	exit 1
+}
+
+if test ! "$1"; then
+	usage
 fi
 
 flags="-g -Wall -Wextra"
-while [[ $1 == -* ]]; do
+while [[ "$1" == -* ]]; do
   flags="$flags $1"
   shift
 done
@@ -13,5 +18,19 @@ done
 name=$1
 shift
 
-echo gcc -o $name $flags $name.[cCS] $*
-gcc -o $name $flags $name.[cCS] $*
+if [ -f $name.[cCS] ]; then
+	cc=gcc
+	src=$name.[cCS]
+elif [ -f $name.cc ]; then
+	cc=g++
+	src=$name.cc
+elif [ -f $name.cpp ]; then
+	cc=g++
+	src=$name.cpp
+else
+	echo "$0: $name.[cCS] | $name.cc | $name.cpp: source file not found"
+	usage
+fi
+
+echo $cc -o $name $flags $src $*
+$cc -o $name $flags $src $*
