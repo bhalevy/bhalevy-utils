@@ -1,0 +1,61 @@
+#!/bin/bash
+
+function usage ()
+{
+	{
+		echo "Usage: $(basename $0) dir [git-format-patch options]"
+		echo
+		echo "dir may contain 'cover-letter' with 'Subject:' line and text"
+	} 1>&2
+	exit 1
+}
+
+test -d "$1" || usage
+dir="$1"
+shift
+opts="-n --cover-letter"
+
+cl="$dir/cover-letter"
+patch0=$(echo "$dir/"0*-cover-letter.patch)
+
+if [ -f "$cl" ]; then
+	prefix=$(awk '/^Prefix:/ { sub(/^Prefix:[ \t]*/, ""); print; exit }' "$cl")
+	if [ -n "$prefix" ]; then
+		opts="$opts --subject-prefix=\"$prefix\""
+	fi
+fi
+
+# --suppress-from --suppress-cc self --suppress-cc cc --suppress-cc sob --suppress-cc author
+cmd="git format-patch -o $dir $opts $@"
+echo "$cmd" && eval "$cmd"
+
+if [ -f "$cl" -a -f "$patch0" ]; then
+	awk '
+		BEGIN   { get_header=1; get_blurb=1; nf=0; }
+		ENDFILE { get_header=0; get_blurb=0; nf++; }
+
+		get_header && /^Subject:/ { sub(/^Subject:[ \t]*/, ""); subject=$0; next; }
+		get_header && /^[A-Za-z_]+:/ { next }
+		get_header && /^[ \t]*$/ { next }
+		get_header || get_blurb {
+			get_header=0;
+			blurb[nb++] = $0;
+			next;
+		}
+
+		/\*\*\* SUBJECT HERE \*\*\*/ {
+			sub(/\*\*\* SUBJECT HERE \*\*\*/, subject);
+			print;
+			next;
+		}
+
+		/\*\*\* BLURB HERE \*\*\*/ {
+			for (i = 0; i < nb; i++)
+				print blurb[i];
+			next;
+		}
+
+		{ print }
+	' "$cl" "$patch0" > "$patch0.new" && mv "$patch0.new" "$patch0"
+fi
+
