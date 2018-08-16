@@ -16,7 +16,6 @@ shift
 opts="-n --cover-letter"
 
 cl="$dir/cover-letter"
-patch0=$(echo "$dir/"0*-cover-letter.patch)
 
 if [ -f "$cl" ]; then
 	prefix=$(awk '/^Prefix:/ { sub(/^Prefix:[ \t]*/, ""); print; exit }' "$cl")
@@ -25,10 +24,11 @@ if [ -f "$cl" ]; then
 	fi
 fi
 
-# --suppress-from --suppress-cc self --suppress-cc cc --suppress-cc sob --suppress-cc author
+rm -f "$dir"/*.patch
 cmd="git format-patch -o $dir $opts $@"
 echo "$cmd" && eval "$cmd"
 
+patch0=$(echo "$dir/"0*-cover-letter.patch)
 if [ -f "$cl" -a -f "$patch0" ]; then
 	awk '
 		BEGIN   { get_header=1; get_blurb=1; nf=0; }
