@@ -13,19 +13,38 @@ function usage ()
 test -d "$1" || usage
 dir="$1"
 shift
+
+has_subject_prefix=""
+extra_opts=""
+for i in "$@"; do
+    if [[ "$i" == -* ]]; then
+        if [[ "$i" == --subject-prefix* ]]; then
+            has_subject_prefix=1
+        fi
+        if [[ "$i" == *=* ]]; then
+            opt=$(echo "$i" | sed -e 's/=/="/' -e 's/$/"/')
+        else
+            opt="$i"
+        fi
+    else
+        opt="\"$i\""
+    fi
+echo "opt=$opt"
+    extra_opts="$extra_opts $opt"
+done
 opts="-n --cover-letter"
 
 cl="$dir/cover-letter"
 
 if [ -f "$cl" ]; then
 	prefix=$(awk '/^Prefix:/ { sub(/^Prefix:[ \t]*/, ""); print; exit }' "$cl")
-	if [ -n "$prefix" ]; then
+	if [ -n "$prefix" -a -z "$has_subject_prefix" ]; then
 		opts="$opts --subject-prefix=\"$prefix\""
 	fi
 fi
 
 rm -f "$dir"/*.patch
-cmd="git format-patch -o $dir $opts $@"
+cmd="git format-patch -o $dir $opts $extra_opts"
 echo "$cmd" && eval "$cmd"
 
 patch0=$(echo "$dir/"0*-cover-letter.patch)
