@@ -1,0 +1,7 @@
+clantlr parses antlr gammer source files and print a
+"canonicalized" version that leaves out target languange specifics
+for easier comparison of different implementations.
+For example, comparing the scylladb and cassandra implementations of cql.
+
+Usage:
+$ clantlr <(clantlr_prep < Example.g) > Example-clantlr.g
