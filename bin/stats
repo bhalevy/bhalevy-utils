@@ -1,0 +1,32 @@
+#!/usr/bin/awk -f
+
+{
+	a[count++] = $1;
+	sum += $1;
+}
+
+END {
+	if (!count) {
+		print "No data" > "/dev/stderr"
+		exit(0);
+	}
+	mean = sum / count;
+	min = mac = a[0];
+	sum2 = var = 0;
+	for (i = 0; i < count; i++) {
+		if (a[i] < min)
+			min = a[i];
+		if (a[i] > max)
+			max = a[i];
+		diff = a[i] - mean;
+		var += diff * diff;
+	}
+	var /= count;
+	std = sqrt(var);
+
+	printf("Count:\t%d\n", count);
+	printf("Mean:\t%.1f\n", mean);
+	printf("Stddev:\t%.1f (%.1f%%)\n", std, 100 * std / mean);
+	printf("Min:\t%.1f (%.1f%%)\n", min, 100 * (mean - min) / mean);
+	printf("Max:\t%.1f (%.1f%%)\n", max, 100 * (max - mean) / mean);
+}
