@@ -5,7 +5,7 @@ if [ $# -lt 2 ]; then
 	exit 1
 fi
 
-cmd="egrep --color=auto -R --include='*.[CcHhlyd]' --exclude '*.o.d' --include='*.cc' --include='*.hh' --include='*.java' --include='*.g' --include='*.apl' --include='*.rpc' --include='Makefile*' --include='config' --include='build' --include='*.sh' --include='*.awk' --include='*.py' --include='*.pl' --include='*.cfg' --include='*.init?' --include='*.proto'"
+cmd="egrep --color=auto -R --include='*.[CcHhlyd]' --exclude '*.o.d' --include='*.cc' --include='*.hh' --include='*.[chi]pp' --include='*.java' --include='*.g' --include='*.apl' --include='*.rpc' --include='Makefile*' --include='config' --include='build' --include='*.sh' --include='*.awk' --include='*.py' --include='*.pl' --include='*.cfg' --include='*.init?' --include='*.proto'"
 i=1
 for arg; do
 	cmd="$cmd \"$arg\""
