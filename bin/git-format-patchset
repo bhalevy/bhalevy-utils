@@ -50,10 +50,18 @@ echo "$cmd" && eval "$cmd"
 patch0=$(echo "$dir/"0*-cover-letter.patch)
 if [ -f "$cl" -a -f "$patch0" ]; then
 	awk '
-		BEGIN   { get_header=1; get_blurb=1; nf=0; }
+		BEGIN   { get_header=1; get_blurb=1; nf=0; IGNORECASE=1; }
 		ENDFILE { get_header=0; get_blurb=0; nf++; }
 
-		get_header && /^Subject:/ { sub(/^Subject:[ \t]*/, ""); subject=$0; next; }
+		function add_subject(line) {
+			if (subject == "")
+				subject = line;
+			else
+				subject = subject "\n" line;
+		}
+
+		get_header && /^Subject:/ { sub(/^Subject:[ \t]*/, ""); add_subject($0); next; }
+		get_header && /^(Cc|To|From):/ { add_subject($0); next; }
 		get_header && /^[A-Za-z_]+:/ { next }
 		get_header && /^[ \t]*$/ { next }
 		get_header || get_blurb {
