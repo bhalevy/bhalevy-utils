@@ -1,2 +1,2 @@
 #!/bin/sh
-exec git branch | awk '$1 == "*" { print $2 }'
+exec git rev-parse --abbrev-ref HEAD
