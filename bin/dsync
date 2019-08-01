@@ -1,0 +1,25 @@
+#!/bin/bash
+
+flags=""
+while [[ "$1" = -* ]]; do
+	flags="$flags $1"
+	shift
+done
+
+for i in "$@"; do
+	if [ ! -d "$i" ]; then
+		if [ -e "$i" ]; then
+			echo "$i: not a directory"
+			exit 1
+		elif [ -d "$HOME/Google Drive/$i" ]; then
+			i="$HOME/Google Drive/$i"
+		else
+			echo "$i: dir not found"
+			exit 1
+		fi
+	fi
+	echo Copying to Google Drive...
+	rclone copy $flags "$i" drive:"$i"
+	echo Copying from Google Drive...
+	rclone copy $flags drive:"$i" "$i"
+done
