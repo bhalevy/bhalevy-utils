@@ -1,25 +1,57 @@
 #!/bin/bash
 
-flags=""
+uflags=""
 while [[ "$1" = -* ]]; do
-	flags="$flags $1"
+	uflags="$uflags $1"
 	shift
 done
 
+if [ -n "$uflags" ]; then
+	flags="$uflags"
+	auto=""
+else
+	flags="-v"
+	auto=1
+fi
+
+tmpfile=/tmp/$(basename $0).$(date +%s).out
+
+function process_output {
+	f="$1"
+	if [ -n "$auto" ] ; then
+		awk '/Copied|Deleted/ {
+			sub(/^([^:]|:[^ ])*: /, "")
+			print
+		}' "$f"
+	else
+		cat "$f"
+	fi
+}
+
 for i in "$@"; do
-	if [ ! -d "$i" ]; then
+	dir="$i"
+	if [ -d "$i" ]; then
+		local_dir="$i"
+	else
 		if [ -e "$i" ]; then
 			echo "$i: not a directory"
 			exit 1
 		elif [ -d "$HOME/Google Drive/$i" ]; then
-			i="$HOME/Google Drive/$i"
+			local_dir="$HOME/Google Drive/$i"
 		else
 			echo "$i: dir not found"
 			exit 1
 		fi
 	fi
 	echo Copying to Google Drive...
-	rclone copy $flags "$i" drive:"$i"
+	echo rclone copy $flags "\"$local_dir\"" "\"drive:$dir\""
+	rclone copy $flags "$local_dir" drive:"$dir" >& $tmpfile
+	process_output $tmpfile
+	rm $tmpfile
+
 	echo Copying from Google Drive...
-	rclone copy $flags drive:"$i" "$i"
+	echo rclone copy $flags "\"drive:$i\"" "\"$i\""
+	rclone copy $flags drive:"$dir" "$local_dir" >& $tmpfile
+	process_output $tmpfile
+	rm $tmpfile
 done
