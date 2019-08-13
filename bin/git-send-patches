@@ -1,4 +1,7 @@
 #!/bin/bash
 
 # --suppress-from --suppress-cc self --suppress-cc cc --suppress-cc sob --suppress-cc author
-exec git-send-email --from "Benny Halevy <bhalevy@panasas.com>" --no-chain-reply-to --cc-cmd mailq-flush $*
+name=$(git config --get user.name)
+email=$(git config --get user.email)
+[ -z "$name" -o -z "$email" ] && { echo $0: Please git config user.name and user.email 1>&2; exit 1; }
+exec git-send-email --from "$name <$email>" --no-chain-reply-to --cc-cmd mailq-flush "$@"
