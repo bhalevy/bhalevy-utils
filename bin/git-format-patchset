@@ -29,7 +29,6 @@ for i in "$@"; do
     else
         opt="\"$i\""
     fi
-echo "opt=$opt"
     extra_opts="$extra_opts $opt"
 done
 opts="-n --cover-letter"
@@ -41,13 +40,16 @@ if [ -f "$cl" ]; then
 	if [ -n "$prefix" -a -z "$has_subject_prefix" ]; then
 		opts="$opts --subject-prefix=\"$prefix\""
 	fi
+else
+	echo "$cl" not found
+	exit 1
 fi
 
 rm -f "$dir"/*.patch
 cmd="git format-patch -o $dir $opts $extra_opts"
 echo "$cmd" && eval "$cmd"
 
-patch0=$(echo "$dir/"0*-cover-letter.patch)
+patch0=$(echo "$dir/"*-cover-letter.patch)
 if [ -f "$cl" -a -f "$patch0" ]; then
 	awk '
 		BEGIN   { get_header=1; get_blurb=1; nf=0; IGNORECASE=1; }
