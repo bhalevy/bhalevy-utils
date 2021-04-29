@@ -3,7 +3,7 @@
 set -e
 
 progname=$(basename $0)
-interactive=""
+query=""
 config_file="$HOME/.aws/$progname.config"
 config_serial_number=""
 serial_number=""
@@ -16,7 +16,7 @@ ${progname} - Get aws session token using MFA
 Usage: ${progname} [-i] [-c config] [-s serial_number [token_code]]
 
     -h                Show this help message
-    -i                Interactive mode
+    -q                Query current session
     -c config_file    Configuration file (default: $config_file)
     -s serial_number  MFA device serial number
     token_code        One time MFA authentication code
@@ -26,7 +26,7 @@ just prints the information for the current session, if
 not expired.
 
 When given a serial_number (using the command line option
-or in interactive mode), the token_code must also be
+or in interactive mode), then token_code must also be
 provided on the command line or in interactive mode, and
 both are passed to the "aws sts get-session-token" cli command.
 
@@ -68,10 +68,10 @@ EOF
         exit 1
 }
 
-while getopts ":ic:s:" opt; do
+while getopts ":qc:s:" opt; do
     case $opt in
-        i)
-            interactive=1;;
+        q)
+            query=1;;
         c)
             config_file="${OPTARG}";;
         s)
@@ -94,11 +94,11 @@ fi
 if [ -z "${serial_number}" ]; then
     serial_number=${config_serial_number}
 fi
-if [ -z "${serial_number}" ] || [ -n "${interactive}" ]; then
+if [ -z "${serial_number}" ] || [ -z "${query}" ]; then
     read -p "MFA Serial number: " -e -i "${serial_number}" serial_number
     if [ "${serial_number}" != "${config_serial_number}" ] && [ -n "${config_file}" ]; then
         save=Y
-        [ -n "${interactive}" ] && read -p "Save serial number [Y/n]: " -e -i "Y" save
+        [ -f "${config_file}" ] && read -p "Save serial number [Y/n]: " -e -i "Y" save
         if [[ "${save}" == [Yy] ]]; then
             echo -n > ${config_file}.new
             [ -f "${config_file}" ] && sed '/serial_number/d' ${config_file} > ${config_file}.new
@@ -109,7 +109,7 @@ if [ -z "${serial_number}" ] || [ -n "${interactive}" ]; then
     fi
 fi
 
-if [ -z "${token_code}" ] && [ -n "${interactive}" ]; then
+if [ -z "${token_code}" ] && [ -z "${query}" ]; then
     read -p "MFA Token code: " -e -i "${token_code}" token_code
 fi
 
