@@ -117,7 +117,7 @@ std::string indent(std::string str, const std::string &indent_by = "  ") {
     return str;
 }
 
-void pretty(std::string str) {
+void bt_format(std::string str) {
     std::cout << indent(str) << std::endl;
 }
 
@@ -186,12 +186,12 @@ int main(int argc, char** argv) {
     }
 
     if (argc > 1) {
-        pretty(argv[1]);
+        bt_format(argv[1]);
     } else {
         std::string str;
         while (!in->eof()) {
             getline(*in, str);
-            pretty(str);
+            bt_format(str);
         }
     }
 
