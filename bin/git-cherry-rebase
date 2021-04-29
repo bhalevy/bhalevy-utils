@@ -17,14 +17,14 @@ if test $# -lt 1; then
 	usage;
 fi
 
-range=$1
-branch=$2
+range="$1"
+branch="$2"
 tmpdir=/tmp/$progname.$$
 tmpfile=$tmpdir/git-rebase-todo
 gefile=$tmpdir/git-editor
 mkdir $tmpdir || { echo $progname: cannot mkdir $tmpdir 1>&2; exit 1; }
 
-git log --reverse --pretty=tformat:"pick %h %s" $opts $range > $tmpfile
+git log --reverse --pretty=tformat:"pick %h %s" $opts "$range" > $tmpfile
 
 GE=$GIT_EDITOR
 if [ "$GE" = "" ]; then
@@ -40,7 +40,7 @@ chmod +x $gefile
 GIT_EDITOR=$gefile
 
 if [ "$branch" != "" ]; then
-	git checkout $branch
+	git checkout "$branch"
 fi
 git rebase -i HEAD
 
