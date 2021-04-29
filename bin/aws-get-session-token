@@ -122,7 +122,7 @@ export -n AWS_PROFILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 $cmd > session-credentials.new
 #echo session-credentials.new:; cat session-credentials.new; echo
 
-for key in AccessKeyId SecretAccessKey SessionToken; do
+for key in AccessKeyId SecretAccessKey SessionToken Expiration; do
     eval ${key}=$(awk '/'${key}'/ { print $2 }' session-credentials.new | tr -d ',')
 done
 
@@ -153,6 +153,7 @@ export AWS_ACCESS_KEY_ID=$AccessKeyId
 export AWS_SECRET_ACCESS_KEY=$SecretAccessKey
 export AWS_SESSION_TOKEN=$SessionToken
 EOF
+echo "# Expiration: $Expiration"
 
 for f in session-credentials credentials; do
     [ -f "${f}" ] && mv ${f} ${f}.bak
