@@ -1,4 +1,6 @@
 #!/bin/sh
+editor=kwrite
+which "$editor" 2>/dev/null || editor=gedit
 out=/tmp/`basename $0`.diff
 tmp=$out.$$
 lock=$out.lock
@@ -15,7 +17,7 @@ locked=0
   if [ $tmp != $out ]; then
     echo $0: output left in $tmp 1>&2
   fi
-  kwrite $tmp;
+  $editor $tmp;
   if [ $locked != 0 ]; then
     rm -f $lock
   fi
