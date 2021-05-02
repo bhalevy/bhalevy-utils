@@ -94,7 +94,7 @@ fi
 if [ -z "${serial_number}" ]; then
     serial_number=${config_serial_number}
 fi
-if [ -z "${serial_number}" ] || [ -z "${query}" ]; then
+if [ -z "${serial_number}" ] && [ -z "${query}" ]; then
     read -p "MFA Serial number: " -e -i "${serial_number}" serial_number
     if [ "${serial_number}" != "${config_serial_number}" ] && [ -n "${config_file}" ]; then
         save=Y
