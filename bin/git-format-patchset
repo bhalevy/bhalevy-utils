@@ -52,7 +52,7 @@ echo "$cmd" && eval "$cmd"
 patch0=$(echo "$dir/"*-cover-letter.patch)
 if [ -f "$cl" -a -f "$patch0" ]; then
 	awk '
-		BEGIN   { get_header=1; get_blurb=1; nf=0; IGNORECASE=1; }
+		BEGIN   { get_header=1; get_blurb=1; nf=0; IGNORECASE=1; subject = ""; address = ""}
 		ENDFILE { get_header=0; get_blurb=0; nf++; }
 
 		function add_subject(line) {
@@ -62,8 +62,15 @@ if [ -f "$cl" -a -f "$patch0" ]; then
 				subject = subject "\n" line;
 		}
 
+		function add_address(line) {
+			if (address == "")
+				address = line;
+			else
+				address = address "\n" line;
+		}
+
 		get_header && /^Subject:/ { sub(/^Subject:[ \t]*/, ""); add_subject($0); next; }
-		get_header && /^(Cc|To|From):/ { add_subject($0); next; }
+		get_header && /^(Cc|To|From):/ { add_address($0); next; }
 		get_header && /^[A-Za-z_]+:/ { next }
 		get_header && /^[ \t]*$/ { next }
 		get_header || get_blurb {
@@ -73,7 +80,7 @@ if [ -f "$cl" -a -f "$patch0" ]; then
 		}
 
 		/\*\*\* SUBJECT HERE \*\*\*/ {
-			sub(/\*\*\* SUBJECT HERE \*\*\*/, subject);
+			sub(/\*\*\* SUBJECT HERE \*\*\*/, subject "\n" address);
 			print;
 			next;
 		}
