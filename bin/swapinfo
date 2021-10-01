@@ -1,0 +1,5 @@
+#!/bin/bash
+
+for i in /proc/*/status; do
+    awk '/Name/ {name=$2} /VmSwap/ && ($2 > 0) {print name, $2, $3}' $i
+done | sort -k 2rn
