@@ -42,9 +42,9 @@
 
 SPACE	[ \t\r]
 COMMENT	"#".*$
-DIGIT	[0-9]
+DIGIT	[0-9_]
 LETTER	[A-Za-z]
-ALNUM	[0-9A-Za-z]
+ALNUM	[0-9A-Za-z_]
 OP	[-/+*%|&^~!()=,;\n]
 DOT	[.]
 SIGN	[-+]

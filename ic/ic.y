@@ -428,9 +428,10 @@ yyerror(char *fmt, ...)
 }
 
 int
-ic_getnum(ic_value_t *vlp, char *s, int base)
+ic_getnum(ic_value_t *vlp, char *sin, int base)
 {
 	int silent = 0;
+    char s[64];
 	char *end = NULL;
 	ic_value_t kmul;
 
@@ -446,6 +447,20 @@ ic_getnum(ic_value_t *vlp, char *s, int base)
 		vlp->type = IC_INT;
 	}
 
+	if (strlen(sin) >= sizeof(s)) {
+		vlp->type = IC_ERROR;
+		goto out;
+	}
+	char *dest = s;
+	char *src = sin;
+    char ch;
+	do {
+		while (*src == '_') {
+			src++;
+		}
+        ch = *src++;
+        *dest++ = ch;
+	} while (ch);
 	vlp->u.ui = strtoull(s, &end, base);
 	if (end == NULL) {
 		vlp->type = IC_ERROR;
