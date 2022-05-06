@@ -1,0 +1,17 @@
+#!/bin/bash
+# Syntax: addword word ...
+
+dict="$HOME/dict"
+ext=$(date +%s)
+tmp_dict=${dict}.${ext}
+
+{
+    echo personal_ws-1.1 en 110
+    {
+        [ -e ${dict} ] && awk 'NR > 1' ${dict}
+        [ -n "$*" ] && echo $* | tr ' ' '\n'
+    } | sort -u
+} > ${tmp_dict} && {
+    [ -e ${dict} ] && mv ${dict} ${dict}.bak
+    mv ${tmp_dict} ${dict}
+}
